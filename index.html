@@ -26,13 +26,26 @@
     /* 品目グリッド */
     .section-title { font-size: 12px; color: #94a3b8; font-weight: bold; margin-bottom: 4px; }
     .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    .item-btn { background: #1e293b; border: 2px solid #334155; color: #f8fafc; padding: 10px 8px; border-radius: 10px; text-align: left; cursor: pointer; transition: all 0.15s ease; }
-    .item-btn.active { background: #1e3a8a; border-color: #3b82f6; box-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
-    .item-name { font-size: 14px; font-weight: bold; }
-    .item-rate { font-size: 11px; color: #94a3b8; margin-top: 2px; }
-    .item-btn.active .item-rate { color: #93c5fd; }
+    
+    /* 品目ボタン（動的カラー） */
+    .item-btn { 
+      border-radius: 10px; 
+      padding: 12px 10px; 
+      text-align: left; 
+      cursor: pointer; 
+      transition: all 0.15s ease; 
+      border: 2px solid transparent; 
+      position: relative;
+    }
+    .item-btn.active { 
+      border-color: #ffffff; 
+      box-shadow: 0 0 14px rgba(255, 255, 255, 0.5); 
+      transform: scale(1.02);
+    }
+    .item-name { font-size: 14px; font-weight: bold; color: #ffffff; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+    .item-rate { font-size: 11px; color: rgba(255,255,255,0.85); margin-top: 2px; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
 
-    /* 重量入力（インライン✕ボタン） */
+    /* 重量入力 */
     .weight-card { background: #1e293b; border-radius: 14px; padding: 12px; border: 1px solid #334155; }
     .weight-box { position: relative; display: flex; align-items: center; }
     .weight-input { width: 100%; background: #0f172a; border: 1px solid #475569; color: #38bdf8; padding: 10px 60px 10px 12px; border-radius: 8px; font-size: 26px; font-weight: bold; text-align: right; }
@@ -86,7 +99,7 @@
   </div>
 
   <div>
-    <div class="section-title">品目（基準単価: 千円/kg）</div>
+    <div class="section-title">品目（高単価: 赤 ↔ 低単価: 青）</div>
     <div class="grid" id="itemGrid"></div>
   </div>
 
@@ -108,7 +121,6 @@
     <div class="cipher-badge" id="cipherCode">----</div>
   </div>
 
-  <!-- 最下部の特大リセットボタン -->
   <button class="btn-next" onclick="clearWeight()">次の品物を測る（クリア）</button>
 </div>
 
@@ -126,25 +138,41 @@
 
 <script>
   const defaultItems = [
+    { name: '象牙バングル大', rate: 250 },
     { name: '象牙アクセSS', rate: 200 },
+    { name: '象牙バングル小', rate: 200 },
+    { name: 'マッコウ', rate: 150 },
     { name: '象牙アクセS', rate: 140 },
     { name: '象牙アクセA', rate: 70 },
     { name: '象牙アクセB', rate: 45 },
-    { name: '象牙バングル大', rate: 250 },
-    { name: '象牙バングル小', rate: 200 },
-    { name: 'マッコウ', rate: 150 },
     { name: 'コツネリ', rate: 3 }
   ];
 
   let items = JSON.parse(localStorage.getItem('app_master_items')) || defaultItems;
   let selectedRate = items[0] ? items[0].rate : 0;
 
+  // 単価に応じた色を生成 (高=赤, 中=紫/マゼンタ, 低=青)
+  function getRateColor(rate, minRate, maxRate) {
+    if (maxRate === minRate) return 'linear-gradient(135deg, #1e3a8a, #2563eb)';
+    const ratio = Math.min(Math.max((rate - minRate) / (maxRate - minRate), 0), 1);
+    
+    // 赤(0deg) 〜 青(225deg) の色相補間
+    const hue = Math.round((1 - ratio) * 225); 
+    return `linear-gradient(135deg, hsl(${hue}, 80%, 32%), hsl(${hue}, 85%, 22%))`;
+  }
+
   function renderGrid() {
     const grid = document.getElementById('itemGrid');
     grid.innerHTML = '';
+    
+    const rates = items.map(i => i.rate);
+    const minRate = Math.min(...rates);
+    const maxRate = Math.max(...rates);
+
     items.forEach((item) => {
       const btn = document.createElement('button');
       btn.className = `item-btn ${item.rate === selectedRate ? 'active' : ''}`;
+      btn.style.background = getRateColor(item.rate, minRate, maxRate);
       btn.innerHTML = `<div class="item-name">${item.name}</div><div class="item-rate">${item.rate} 千円/kg</div>`;
       btn.onclick = () => {
         document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('active'));
