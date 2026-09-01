@@ -64,17 +64,19 @@
     .btn-next { width: 100%; background: #2563eb; border: none; color: #ffffff; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
     .btn-next:active { background: #1d4ed8; }
 
-    /* モーダル */
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; padding: 16px; overflow-y: auto; }
-    .modal-content { max-width: 480px; margin: 20px auto; background: #1e293b; border-radius: 16px; padding: 16px; border: 1px solid #475569; }
+    /* モーダル（マスタ編集） */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; padding: 12px; overflow-y: auto; }
+    .modal-content { max-width: 480px; margin: 10px auto; background: #1e293b; border-radius: 16px; padding: 16px; border: 1px solid #475569; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .modal-title { font-size: 16px; font-weight: bold; color: #f8fafc; }
-    .btn-close { background: transparent; border: none; color: #94a3b8; font-size: 20px; font-weight: bold; cursor: pointer; }
-    .master-row { display: flex; gap: 6px; margin-bottom: 8px; align-items: center; }
-    .master-row input { background: #0f172a; border: 1px solid #475569; color: #f8fafc; padding: 8px; border-radius: 6px; font-size: 14px; }
-    .master-row input.name { flex: 2; }
-    .master-row input.rate { flex: 1; text-align: right; }
-    .btn-del { background: #dc2626; border: none; color: #fff; padding: 8px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+    .btn-close { background: transparent; border: none; color: #94a3b8; font-size: 22px; font-weight: bold; cursor: pointer; padding: 4px; }
+    
+    /* マスタ編集行の横並び調整 */
+    .master-row { display: grid; grid-template-columns: 1fr 85px 44px; gap: 6px; margin-bottom: 8px; align-items: center; }
+    .master-row input { width: 100%; background: #0f172a; border: 1px solid #475569; color: #f8fafc; padding: 8px 6px; border-radius: 6px; font-size: 13px; }
+    .master-row input.rate { text-align: right; }
+    .btn-del { width: 100%; height: 35px; background: #dc2626; border: none; color: #fff; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    
     .btn-add-item { width: 100%; background: #334155; border: 1px dashed #64748b; color: #93c5fd; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-top: 8px; cursor: pointer; }
     .btn-save-master { width: 100%; background: #16a34a; border: none; color: #fff; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; margin-top: 12px; cursor: pointer; }
   </style>
@@ -124,6 +126,7 @@
   <button class="btn-next" onclick="clearWeight()">次の品物を測る（クリア）</button>
 </div>
 
+<!-- マスタ編集モーダル -->
 <div class="modal" id="masterModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -151,12 +154,9 @@
   let items = JSON.parse(localStorage.getItem('app_master_items')) || defaultItems;
   let selectedRate = items[0] ? items[0].rate : 0;
 
-  // 単価に応じた色を生成 (高=赤, 中=紫/マゼンタ, 低=青)
   function getRateColor(rate, minRate, maxRate) {
     if (maxRate === minRate) return 'linear-gradient(135deg, #1e3a8a, #2563eb)';
     const ratio = Math.min(Math.max((rate - minRate) / (maxRate - minRate), 0), 1);
-    
-    // 赤(0deg) 〜 青(225deg) の色相補間
     const hue = Math.round((1 - ratio) * 225); 
     return `linear-gradient(135deg, hsl(${hue}, 80%, 32%), hsl(${hue}, 85%, 22%))`;
   }
@@ -266,7 +266,7 @@
     div.innerHTML = `
       <input type="text" class="name" placeholder="品目名" value="${name}">
       <input type="number" class="rate" placeholder="単価" value="${rate}">
-      <button class="btn-del" onclick="this.parentElement.remove()">削除</button>
+      <button class="btn-del" onclick="this.parentElement.remove()">✕</button>
     `;
     return div;
   }
