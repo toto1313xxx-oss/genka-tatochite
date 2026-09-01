@@ -11,43 +11,66 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background-color: #0f172a; color: #f8fafc; padding: 16px; min-height: 100vh; }
-    .container { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+    .container { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
     
+    /* ヘッダー・設定切替 */
+    .header-bar { display: flex; justify-content: space-between; align-items: center; }
+    .title { font-size: 15px; font-weight: bold; color: #94a3b8; }
+    .btn-toggle-master { background: #334155; border: 1px solid #475569; color: #f8fafc; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; }
+
     /* ロット設定 */
-    .lot-card { background: #1e293b; border-radius: 14px; padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border: 1px solid #334155; }
+    .lot-card { background: #1e293b; border-radius: 14px; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border: 1px solid #334155; }
     .input-group label { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 4px; font-weight: bold; }
     .input-group input { width: 100%; background: #0f172a; border: 1px solid #475569; color: #f8fafc; padding: 10px; border-radius: 8px; font-size: 18px; font-weight: bold; text-align: right; }
 
     /* 品目ボタングリッド */
-    .section-title { font-size: 12px; color: #94a3b8; font-weight: bold; margin-bottom: 6px; }
+    .section-title { font-size: 12px; color: #94a3b8; font-weight: bold; margin-bottom: 4px; }
     .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    .item-btn { background: #1e293b; border: 2px solid #334155; color: #f8fafc; padding: 12px 8px; border-radius: 10px; text-align: left; cursor: pointer; transition: all 0.15s ease; }
+    .item-btn { background: #1e293b; border: 2px solid #334155; color: #f8fafc; padding: 10px 8px; border-radius: 10px; text-align: left; cursor: pointer; transition: all 0.15s ease; }
     .item-btn.active { background: #1e3a8a; border-color: #3b82f6; box-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
     .item-name { font-size: 14px; font-weight: bold; }
     .item-rate { font-size: 11px; color: #94a3b8; margin-top: 2px; }
     .item-btn.active .item-rate { color: #93c5fd; }
 
     /* 重量入力 */
-    .weight-card { background: #1e293b; border-radius: 14px; padding: 14px; border: 1px solid #334155; }
+    .weight-card { background: #1e293b; border-radius: 14px; padding: 12px; border: 1px solid #334155; }
     .weight-input-wrapper { display: flex; gap: 8px; align-items: center; }
-    .weight-input { flex: 1; background: #0f172a; border: 1px solid #475569; color: #38bdf8; padding: 12px; border-radius: 8px; font-size: 26px; font-weight: bold; text-align: right; }
-    .unit { font-size: 18px; color: #94a3b8; font-weight: bold; padding-right: 4px; }
-    .btn-clear { background: #334155; border: none; color: #f8fafc; padding: 12px 16px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
+    .weight-input { flex: 1; background: #0f172a; border: 1px solid #475569; color: #38bdf8; padding: 10px; border-radius: 8px; font-size: 26px; font-weight: bold; text-align: right; }
+    .unit { font-size: 18px; color: #94a3b8; font-weight: bold; }
+    .btn-clear { background: #334155; border: none; color: #f8fafc; padding: 10px 14px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
 
     /* 結果カード */
-    .result-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 16px; padding: 16px; border: 2px solid #fbbf24; display: flex; flex-direction: column; align-items: center; text-align: center; }
-    .result-sub { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
-    .result-values { font-size: 15px; color: #e2e8f0; margin-bottom: 10px; }
+    .result-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 16px; padding: 14px; border: 2px solid #fbbf24; display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .result-sub { font-size: 12px; color: #94a3b8; margin-bottom: 2px; }
+    .result-values { font-size: 15px; color: #e2e8f0; margin-bottom: 8px; }
     .result-values span { font-weight: bold; color: #38bdf8; }
-    
-    /* 符牒特大バッジ */
     .cipher-label { font-size: 11px; font-weight: bold; color: #fbbf24; letter-spacing: 2px; }
-    .cipher-badge { font-size: 42px; font-weight: 900; color: #fbbf24; letter-spacing: 6px; text-shadow: 0 0 16px rgba(251, 191, 36, 0.4); min-height: 54px; line-height: 54px; }
+    .cipher-badge { font-size: 40px; font-weight: 900; color: #fbbf24; letter-spacing: 6px; text-shadow: 0 0 16px rgba(251, 191, 36, 0.4); min-height: 50px; line-height: 50px; }
+
+    /* マスタ管理モーダル */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; padding: 16px; overflow-y: auto; }
+    .modal-content { max-width: 480px; margin: 20px auto; background: #1e293b; border-radius: 16px; padding: 16px; border: 1px solid #475569; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .modal-title { font-size: 16px; font-weight: bold; color: #f8fafc; }
+    .btn-close { background: transparent; border: none; color: #94a3b8; font-size: 20px; font-weight: bold; cursor: pointer; }
+    .master-row { display: flex; gap: 6px; margin-bottom: 8px; align-items: center; }
+    .master-row input { background: #0f172a; border: 1px solid #475569; color: #f8fafc; padding: 8px; border-radius: 6px; font-size: 14px; }
+    .master-row input.name { flex: 2; }
+    .master-row input.rate { flex: 1; text-align: right; }
+    .btn-del { background: #dc2626; border: none; color: #fff; padding: 8px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+    .btn-add-item { width: 100%; background: #2563eb; border: none; color: #fff; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-top: 8px; cursor: pointer; }
+    .btn-save-master { width: 100%; background: #16a34a; border: none; color: #fff; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; margin-top: 12px; cursor: pointer; }
   </style>
 </head>
 <body>
 
 <div class="container">
+  <!-- ヘッダー -->
+  <div class="header-bar">
+    <div class="title">原価符牒計算機</div>
+    <button class="btn-toggle-master" onclick="openMasterModal()">⚙️ 品目マスタ編集</button>
+  </div>
+
   <!-- ロット設定 -->
   <div class="lot-card">
     <div class="input-group">
@@ -87,35 +110,53 @@
   </div>
 </div>
 
+<!-- マスタ編集モーダル -->
+<div class="modal" id="masterModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">品目・単価マスタ編集</div>
+      <button class="btn-close" onclick="closeMasterModal()">✕</button>
+    </div>
+    <div id="masterList"></div>
+    <button class="btn-add-item" onclick="addNewMasterRow()">＋ 新しい品目を追加</button>
+    <button class="btn-save-master" onclick="saveMasterData()">変更を保存して反映</button>
+  </div>
+</div>
+
 <script>
-  // 品目マスタ
-  const items = [
+  // デフォルト品目マスタ
+  const defaultItems = [
     { name: '象牙アクセSS', rate: 200 },
     { name: '象牙アクセS', rate: 140 },
     { name: '象牙アクセA', rate: 70 },
     { name: '象牙アクセB', rate: 45 },
-    { name: 'バングル大', rate: 250 },
-    { name: 'バングル小', rate: 200 },
+    { name: '象牙バングル大', rate: 250 },
+    { name: '象牙バングル小', rate: 200 },
     { name: 'マッコウ', rate: 150 },
     { name: 'コツネリ', rate: 3 }
   ];
 
-  let selectedRate = 45;
+  // ローカルストレージから品目データを取得
+  let items = JSON.parse(localStorage.getItem('app_master_items')) || defaultItems;
+  let selectedRate = items[0] ? items[0].rate : 0;
 
-  // 品目ボタンの初期化
-  const grid = document.getElementById('itemGrid');
-  items.forEach((item, idx) => {
-    const btn = document.createElement('button');
-    btn.className = `item-btn ${item.rate === selectedRate ? 'active' : ''}`;
-    btn.innerHTML = `<div class="item-name">${item.name}</div><div class="item-rate">${item.rate} 千円/kg</div>`;
-    btn.onclick = () => {
-      document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      selectedRate = item.rate;
-      calculate();
-    };
-    grid.appendChild(btn);
-  });
+  // 品目グリッド描画
+  function renderGrid() {
+    const grid = document.getElementById('itemGrid');
+    grid.innerHTML = '';
+    items.forEach((item) => {
+      const btn = document.createElement('button');
+      btn.className = `item-btn ${item.rate === selectedRate ? 'active' : ''}`;
+      btn.innerHTML = `<div class="item-name">${item.name}</div><div class="item-rate">${item.rate} 千円/kg</div>`;
+      btn.onclick = () => {
+        document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedRate = item.rate;
+        calculate();
+      };
+      grid.appendChild(btn);
+    });
+  }
 
   // 符牒変換ロジック (最大4文字)
   function getCipher(price) {
@@ -166,28 +207,61 @@
     calculate();
   }
 
-  // PWA用マニフェスト動的生成
-  const manifest = {
-    name: "原価符牒計算機",
-    short_name: "原価計算",
-    start_url: ".",
-    display: "standalone",
-    background_color: "#0f172a",
-    theme_color: "#111827",
-    icons: [{
-      src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231e293b'/><text y='.9em' font-size='70' x='15' fill='%23fbbf24'>符</text></svg>",
-      sizes: "192x192 512x512",
-      type: "image/svg+xml"
-    }]
-  };
-  const stringManifest = JSON.stringify(manifest);
-  const blob = new Blob([stringManifest], {type: 'application/json'});
-  const manifestURL = URL.createObjectURL(blob);
-  const link = document.createElement('link');
-  link.rel = 'manifest';
-  link.href = manifestURL;
-  document.head.appendChild(link);
+  // マスタ管理モーダル操作
+  function openMasterModal() {
+    const list = document.getElementById('masterList');
+    list.innerHTML = '';
+    items.forEach((item, idx) => {
+      list.appendChild(createMasterRow(item.name, item.rate));
+    });
+    document.getElementById('masterModal').style.display = 'block';
+  }
+
+  function closeMasterModal() {
+    document.getElementById('masterModal').style.display = 'none';
+  }
+
+  function createMasterRow(name = '', rate = '') {
+    const div = document.createElement('div');
+    div.className = 'master-row';
+    div.innerHTML = `
+      <input type="text" class="name" placeholder="品目名" value="${name}">
+      <input type="number" class="rate" placeholder="単価(千円)" value="${rate}">
+      <button class="btn-del" onclick="this.parentElement.remove()">削除</button>
+    `;
+    return div;
+  }
+
+  function addNewMasterRow() {
+    document.getElementById('masterList').appendChild(createMasterRow());
+  }
+
+  function saveMasterData() {
+    const rows = document.querySelectorAll('.master-row');
+    const newItems = [];
+    rows.forEach(row => {
+      const name = row.querySelector('.name').value.trim();
+      const rate = parseFloat(row.querySelector('.rate').value) || 0;
+      if (name) {
+        newItems.push({ name, rate });
+      }
+    });
+
+    if (newItems.length === 0) {
+      alert('最低1つの品目を設定してください');
+      return;
+    }
+
+    items = newItems;
+    localStorage.setItem('app_master_items', JSON.stringify(items));
+    selectedRate = items[0].rate;
+    renderGrid();
+    calculate();
+    closeMasterModal();
+  }
+
+  // 初期化実行
+  renderGrid();
 </script>
 </body>
 </html>
-
