@@ -1,3 +1,8 @@
+ヘッダーに 「🔄 符牒 ⇄ 価格 相互変換」ボタン を追加し、ワンタップで相互変換ツール（ポップアップ）を開けるように改修しました。
+ * 価格 \rightarrow 符牒: 金額（円）を入れると即座に符牒コード（例: 13500 \rightarrow トヒトサ）を表示。
+ * 符牒 \rightarrow 価格: 符牒コードを入れると即座に金額（例: トヒエ \rightarrow 17,000円）に復元。
+完全版 index.html（相互変換ツール搭載）
+GitHubの index.html に丸ごと上書きしてコミットしてください。
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -13,10 +18,12 @@
     body { background-color: #0f172a; color: #f8fafc; padding: 14px; min-height: 100vh; }
     .container { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
     
-    /* ヘッダー */
-    .header-bar { display: flex; justify-content: space-between; align-items: center; }
-    .title { font-size: 15px; font-weight: bold; color: #94a3b8; }
-    .btn-toggle-master { background: #334155; border: 1px solid #475569; color: #f8fafc; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; }
+    /* ヘッダー・アクションボタン */
+    .header-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .title { font-size: 14px; font-weight: bold; color: #94a3b8; white-space: nowrap; }
+    .header-actions { display: flex; gap: 6px; }
+    .btn-header { background: #334155; border: 1px solid #475569; color: #f8fafc; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; }
+    .btn-header.highlight { background: #0284c7; border-color: #38bdf8; color: #fff; }
 
     /* ロット設定 */
     .lot-card { background: #1e293b; border-radius: 14px; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border: 1px solid #334155; }
@@ -28,20 +35,8 @@
     .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
     
     /* 品目ボタン（動的カラー） */
-    .item-btn { 
-      border-radius: 10px; 
-      padding: 12px 10px; 
-      text-align: left; 
-      cursor: pointer; 
-      transition: all 0.15s ease; 
-      border: 2px solid transparent; 
-      position: relative;
-    }
-    .item-btn.active { 
-      border-color: #ffffff; 
-      box-shadow: 0 0 14px rgba(255, 255, 255, 0.5); 
-      transform: scale(1.02);
-    }
+    .item-btn { border-radius: 10px; padding: 12px 10px; text-align: left; cursor: pointer; transition: all 0.15s ease; border: 2px solid transparent; }
+    .item-btn.active { border-color: #ffffff; box-shadow: 0 0 14px rgba(255, 255, 255, 0.5); transform: scale(1.02); }
     .item-name { font-size: 14px; font-weight: bold; color: #ffffff; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
     .item-rate { font-size: 11px; color: rgba(255,255,255,0.85); margin-top: 2px; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
 
@@ -60,23 +55,28 @@
     .cipher-label { font-size: 11px; font-weight: bold; color: #fbbf24; letter-spacing: 2px; }
     .cipher-badge { font-size: 40px; font-weight: 900; color: #fbbf24; letter-spacing: 6px; text-shadow: 0 0 16px rgba(251, 191, 36, 0.4); min-height: 50px; line-height: 50px; }
 
-    /* 特大次へボタン */
+    /* 次へボタン */
     .btn-next { width: 100%; background: #2563eb; border: none; color: #ffffff; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
     .btn-next:active { background: #1d4ed8; }
 
-    /* モーダル（マスタ編集） */
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; padding: 12px; overflow-y: auto; }
+    /* モーダル共通 */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; padding: 14px; overflow-y: auto; }
     .modal-content { max-width: 480px; margin: 10px auto; background: #1e293b; border-radius: 16px; padding: 16px; border: 1px solid #475569; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
     .modal-title { font-size: 16px; font-weight: bold; color: #f8fafc; }
     .btn-close { background: transparent; border: none; color: #94a3b8; font-size: 22px; font-weight: bold; cursor: pointer; padding: 4px; }
-    
-    /* マスタ編集行の横並び調整 */
+
+    /* 相互変換用スタイル */
+    .conv-box { background: #0f172a; border-radius: 12px; padding: 14px; border: 1px solid #334155; margin-bottom: 12px; }
+    .conv-label { font-size: 12px; font-weight: bold; color: #94a3b8; margin-bottom: 6px; }
+    .conv-input { width: 100%; background: #1e293b; border: 1px solid #475569; color: #f8fafc; padding: 10px; border-radius: 8px; font-size: 18px; font-weight: bold; margin-bottom: 8px; }
+    .conv-result-badge { font-size: 24px; font-weight: 900; color: #fbbf24; text-align: center; padding: 6px; background: rgba(251, 191, 36, 0.1); border-radius: 8px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+
+    /* マスタ編集用 */
     .master-row { display: grid; grid-template-columns: 1fr 85px 44px; gap: 6px; margin-bottom: 8px; align-items: center; }
     .master-row input { width: 100%; background: #0f172a; border: 1px solid #475569; color: #f8fafc; padding: 8px 6px; border-radius: 6px; font-size: 13px; }
     .master-row input.rate { text-align: right; }
     .btn-del { width: 100%; height: 35px; background: #dc2626; border: none; color: #fff; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    
     .btn-add-item { width: 100%; background: #334155; border: 1px dashed #64748b; color: #93c5fd; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-top: 8px; cursor: pointer; }
     .btn-save-master { width: 100%; background: #16a34a; border: none; color: #fff; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; margin-top: 12px; cursor: pointer; }
   </style>
@@ -84,11 +84,16 @@
 <body>
 
 <div class="container">
+  <!-- ヘッダー -->
   <div class="header-bar">
     <div class="title">原価符牒計算機</div>
-    <button class="btn-toggle-master" onclick="openMasterModal()">⚙️ 品目マスタ編集</button>
+    <div class="header-actions">
+      <button class="btn-header highlight" onclick="openConvModal()">🔄 相互変換</button>
+      <button class="btn-header" onclick="openMasterModal()">⚙️ マスタ</button>
+    </div>
   </div>
 
+  <!-- ロット設定 -->
   <div class="lot-card">
     <div class="input-group">
       <label>総買値 (千円)</label>
@@ -100,11 +105,13 @@
     </div>
   </div>
 
+  <!-- 品目選択 -->
   <div>
     <div class="section-title">品目（高単価: 赤 ↔ 低単価: 青）</div>
     <div class="grid" id="itemGrid"></div>
   </div>
 
+  <!-- 重量入力 -->
   <div class="weight-card">
     <div class="section-title">はかりの計量値</div>
     <div class="weight-box">
@@ -114,6 +121,7 @@
     </div>
   </div>
 
+  <!-- 結果カード -->
   <div class="result-card">
     <div class="result-sub">個別見積り / 確定原価</div>
     <div class="result-values">
@@ -124,6 +132,30 @@
   </div>
 
   <button class="btn-next" onclick="clearWeight()">次の品物を測る（クリア）</button>
+</div>
+
+<!-- 相互変換モーダル -->
+<div class="modal" id="convModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">価格 ⇄ 符牒 相互変換</div>
+      <button class="btn-close" onclick="closeConvModal()">✕</button>
+    </div>
+    
+    <!-- 価格 -> 符牒 -->
+    <div class="conv-box">
+      <div class="conv-label">① 価格（円） ➔ 符牒コード</div>
+      <input type="number" id="inputYen" class="conv-input" placeholder="例: 13500" oninput="convertYenToCipher()">
+      <div class="conv-result-badge" id="outputCipher">----</div>
+    </div>
+
+    <!-- 符牒 -> 価格 -->
+    <div class="conv-box">
+      <div class="conv-label">② 符牒コード ➔ 価格（円）</div>
+      <input type="text" id="inputCipher" class="conv-input" placeholder="例: トヒトサ" oninput="convertCipherToYen()">
+      <div class="conv-result-badge" id="outputYen" style="color:#38bdf8;">---- 円</div>
+    </div>
+  </div>
 </div>
 
 <!-- マスタ編集モーダル -->
@@ -164,7 +196,6 @@
   function renderGrid() {
     const grid = document.getElementById('itemGrid');
     grid.innerHTML = '';
-    
     const rates = items.map(i => i.rate);
     const minRate = Math.min(...rates);
     const maxRate = Math.max(...rates);
@@ -184,6 +215,11 @@
     });
   }
 
+  const map = { '1':'ヒ', '2':'コ', '3':'ト', '4':'ニ', '5':'サ', '6':'カ', '7':'エ', '8':'ル', '9':'ウ', '0':'チ' };
+  const revMap = { 'ヒ':'1', 'コ':'2', 'ト':'3', 'ニ':'4', 'サ':'5', 'カ':'6', 'エ':'7', 'ル':'8', 'ウ':'9', 'チ':'0' };
+  const prefixDigitLen = { 'テ': 7, 'チ': 6, 'ト': 5, 'タ': 4 };
+
+  // 符牒エンコード
   function getCipher(priceYen) {
     if (!priceYen || priceYen < 1000) return "----";
     const num = Math.floor(priceYen);
@@ -194,7 +230,6 @@
     else if (num >= 10000) prefix = "ト";
     else if (num >= 1000) prefix = "タ";
 
-    const map = { '1':'ヒ', '2':'コ', '3':'ト', '4':'ニ', '5':'サ', '6':'カ', '7':'エ', '8':'ル', '9':'ウ', '0':'チ' };
     const digits = String(num);
     const trimmed = digits.replace(/0+$/, '');
 
@@ -225,6 +260,40 @@
     return (prefix + res.join("")).slice(0, 4);
   }
 
+  // 符牒デコード
+  function decodeCipher(cipherStr) {
+    const s = cipherStr.trim();
+    if (!s) return "---- 円";
+    const first = s[0];
+    if (!prefixDigitLen[first]) return "先頭は テ/チ/ト/タ";
+
+    const targetLen = prefixDigitLen[first];
+    const body = s.slice(1);
+
+    // 切りのいい数字 (例: タヒオ -> 1000)
+    if (body.length === 2 && body[1] === 'オ' && revMap[body[0]]) {
+      const numStr = revMap[body[0]].padEnd(targetLen, '0');
+      return Number(numStr).toLocaleString() + " 円";
+    }
+
+    let digits = [];
+    for (let i = 0; i < body.length; i++) {
+      const ch = body[i];
+      if (ch === 'オ') {
+        if (digits.length > 0) {
+          digits.push(digits[digits.length - 1]);
+        }
+      } else if (revMap[ch]) {
+        digits.push(revMap[ch]);
+      }
+    }
+
+    let numStr = digits.join('');
+    if (!numStr) return "無効なコード";
+    numStr = numStr.padEnd(targetLen, '0').slice(0, targetLen);
+    return Number(numStr).toLocaleString() + " 円";
+  }
+
   function calculate() {
     const buyPrice = parseFloat(document.getElementById('buyPrice').value) || 0;
     const lotEstimate = parseFloat(document.getElementById('lotEstimate').value) || 0;
@@ -247,18 +316,26 @@
     input.focus();
   }
 
+  // 相互変換モーダル
+  function openConvModal() { document.getElementById('convModal').style.display = 'block'; }
+  function closeConvModal() { document.getElementById('convModal').style.display = 'none'; }
+  function convertYenToCipher() {
+    const val = parseFloat(document.getElementById('inputYen').value) || 0;
+    document.getElementById('outputCipher').textContent = getCipher(val);
+  }
+  function convertCipherToYen() {
+    const val = document.getElementById('inputCipher').value;
+    document.getElementById('outputYen').textContent = decodeCipher(val);
+  }
+
+  // マスタ編集モーダル
   function openMasterModal() {
     const list = document.getElementById('masterList');
     list.innerHTML = '';
-    items.forEach(item => {
-      list.appendChild(createMasterRow(item.name, item.rate));
-    });
+    items.forEach(item => list.appendChild(createMasterRow(item.name, item.rate)));
     document.getElementById('masterModal').style.display = 'block';
   }
-
-  function closeMasterModal() {
-    document.getElementById('masterModal').style.display = 'none';
-  }
+  function closeMasterModal() { document.getElementById('masterModal').style.display = 'none'; }
 
   function createMasterRow(name = '', rate = '') {
     const div = document.createElement('div');
@@ -271,9 +348,7 @@
     return div;
   }
 
-  function addNewMasterRow() {
-    document.getElementById('masterList').appendChild(createMasterRow());
-  }
+  function addNewMasterRow() { document.getElementById('masterList').appendChild(createMasterRow()); }
 
   function saveMasterData() {
     const rows = document.querySelectorAll('.master-row');
@@ -301,3 +376,4 @@
 </script>
 </body>
 </html>
+
