@@ -1,1 +1,193 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#111827">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="原価符牒計算">
+  <title>原価符牒計算機</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: #0f172a; color: #f8fafc; padding: 16px; min-height: 100vh; }
+    .container { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+    
+    /* ロット設定 */
+    .lot-card { background: #1e293b; border-radius: 14px; padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border: 1px solid #334155; }
+    .input-group label { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 4px; font-weight: bold; }
+    .input-group input { width: 100%; background: #0f172a; border: 1px solid #475569; color: #f8fafc; padding: 10px; border-radius: 8px; font-size: 18px; font-weight: bold; text-align: right; }
+
+    /* 品目ボタングリッド */
+    .section-title { font-size: 12px; color: #94a3b8; font-weight: bold; margin-bottom: 6px; }
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .item-btn { background: #1e293b; border: 2px solid #334155; color: #f8fafc; padding: 12px 8px; border-radius: 10px; text-align: left; cursor: pointer; transition: all 0.15s ease; }
+    .item-btn.active { background: #1e3a8a; border-color: #3b82f6; box-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
+    .item-name { font-size: 14px; font-weight: bold; }
+    .item-rate { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+    .item-btn.active .item-rate { color: #93c5fd; }
+
+    /* 重量入力 */
+    .weight-card { background: #1e293b; border-radius: 14px; padding: 14px; border: 1px solid #334155; }
+    .weight-input-wrapper { display: flex; gap: 8px; align-items: center; }
+    .weight-input { flex: 1; background: #0f172a; border: 1px solid #475569; color: #38bdf8; padding: 12px; border-radius: 8px; font-size: 26px; font-weight: bold; text-align: right; }
+    .unit { font-size: 18px; color: #94a3b8; font-weight: bold; padding-right: 4px; }
+    .btn-clear { background: #334155; border: none; color: #f8fafc; padding: 12px 16px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
+
+    /* 結果カード */
+    .result-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 16px; padding: 16px; border: 2px solid #fbbf24; display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .result-sub { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+    .result-values { font-size: 15px; color: #e2e8f0; margin-bottom: 10px; }
+    .result-values span { font-weight: bold; color: #38bdf8; }
+    
+    /* 符牒特大バッジ */
+    .cipher-label { font-size: 11px; font-weight: bold; color: #fbbf24; letter-spacing: 2px; }
+    .cipher-badge { font-size: 42px; font-weight: 900; color: #fbbf24; letter-spacing: 6px; text-shadow: 0 0 16px rgba(251, 191, 36, 0.4); min-height: 54px; line-height: 54px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- ロット設定 -->
+  <div class="lot-card">
+    <div class="input-group">
+      <label>総買値 (千円)</label>
+      <input type="number" id="buyPrice" value="100" inputmode="numeric" oninput="calculate()">
+    </div>
+    <div class="input-group">
+      <label>全体見積り (千円)</label>
+      <input type="number" id="lotEstimate" value="200" inputmode="numeric" oninput="calculate()">
+    </div>
+  </div>
+
+  <!-- 品目選択 -->
+  <div>
+    <div class="section-title">品目（基準単価: 千円/kg）</div>
+    <div class="grid" id="itemGrid"></div>
+  </div>
+
+  <!-- 重量入力 -->
+  <div class="weight-card">
+    <div class="section-title">はかりの計量値</div>
+    <div class="weight-input-wrapper">
+      <input type="number" id="weight" class="weight-input" placeholder="0" inputmode="decimal" oninput="calculate()">
+      <span class="unit">g</span>
+      <button class="btn-clear" onclick="clearWeight()">クリア</button>
+    </div>
+  </div>
+
+  <!-- 結果表示 -->
+  <div class="result-card">
+    <div class="result-sub">個別見積り / 確定原価</div>
+    <div class="result-values">
+      見積: <span id="indivEst">0</span> 千円 ｜ 原価: <span id="finalCost">0</span> 千円 (<span id="actualYen">0</span>円)
+    </div>
+    <div class="cipher-label">確定原価 符牒コード</div>
+    <div class="cipher-badge" id="cipherCode">----</div>
+  </div>
+</div>
+
+<script>
+  // 品目マスタ
+  const items = [
+    { name: '象牙アクセSS', rate: 200 },
+    { name: '象牙アクセS', rate: 140 },
+    { name: '象牙アクセA', rate: 70 },
+    { name: '象牙アクセB', rate: 45 },
+    { name: 'バングル大', rate: 250 },
+    { name: 'バングル小', rate: 200 },
+    { name: 'マッコウ', rate: 150 },
+    { name: 'コツネリ', rate: 3 }
+  ];
+
+  let selectedRate = 45;
+
+  // 品目ボタンの初期化
+  const grid = document.getElementById('itemGrid');
+  items.forEach((item, idx) => {
+    const btn = document.createElement('button');
+    btn.className = `item-btn ${item.rate === selectedRate ? 'active' : ''}`;
+    btn.innerHTML = `<div class="item-name">${item.name}</div><div class="item-rate">${item.rate} 千円/kg</div>`;
+    btn.onclick = () => {
+      document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedRate = item.rate;
+      calculate();
+    };
+    grid.appendChild(btn);
+  });
+
+  // 符牒変換ロジック (最大4文字)
+  function getCipher(price) {
+    if (!price || price <= 0) return "----";
+    const num = Math.floor(price);
+    const digits = String(num);
+    let prefix = "";
+
+    if (num >= 1000000) prefix = "テ";
+    else if (num >= 100000) prefix = "チ";
+    else if (num >= 10000) prefix = "ト";
+    else if (num >= 1000) prefix = "タ";
+
+    const map = { '1':'ヒ', '2':'コ', '3':'ト', '4':'ニ', '5':'サ', '6':'カ', '7':'エ', '8':'ル', '9':'ウ', '0':'チ' };
+    let clean = digits.replace(/0+$/, '');
+    if (!clean) clean = "0";
+
+    let code = [];
+    for (let i = 0; i < clean.length; i++) {
+      if (code.length >= 3) break;
+      if (i > 0 && clean[i] === clean[i - 1]) {
+        code.push("オ");
+        break;
+      }
+      code.push(map[clean[i]] || "");
+    }
+    return (prefix + code.join("")).slice(0, 4);
+  }
+
+  // 計算実行
+  function calculate() {
+    const buyPrice = parseFloat(document.getElementById('buyPrice').value) || 0;
+    const lotEstimate = parseFloat(document.getElementById('lotEstimate').value) || 0;
+    const weight = parseFloat(document.getElementById('weight').value) || 0;
+
+    const indivEst = selectedRate * (weight / 1000);
+    const cost = (lotEstimate > 0) ? indivEst * (buyPrice / lotEstimate) : 0;
+    const actualYen = Math.round(cost * 1000);
+
+    document.getElementById('indivEst').textContent = indivEst.toFixed(1);
+    document.getElementById('finalCost').textContent = cost.toFixed(1);
+    document.getElementById('actualYen').textContent = actualYen.toLocaleString();
+    document.getElementById('cipherCode').textContent = getCipher(actualYen);
+  }
+
+  function clearWeight() {
+    document.getElementById('weight').value = '';
+    calculate();
+  }
+
+  // PWA用マニフェスト動的生成
+  const manifest = {
+    name: "原価符牒計算機",
+    short_name: "原価計算",
+    start_url: ".",
+    display: "standalone",
+    background_color: "#0f172a",
+    theme_color: "#111827",
+    icons: [{
+      src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231e293b'/><text y='.9em' font-size='70' x='15' fill='%23fbbf24'>符</text></svg>",
+      sizes: "192x192 512x512",
+      type: "image/svg+xml"
+    }]
+  };
+  const stringManifest = JSON.stringify(manifest);
+  const blob = new Blob([stringManifest], {type: 'application/json'});
+  const manifestURL = URL.createObjectURL(blob);
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = manifestURL;
+  document.head.appendChild(link);
+</script>
+</body>
+</html>
 
