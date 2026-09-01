@@ -10,7 +10,7 @@
   <title>原価符牒計算機</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
-    body { background-color: #0f172a; color: #f8fafc; padding: 16px; min-height: 100vh; }
+    body { background-color: #0f172a; color: #f8fafc; padding: 14px; min-height: 100vh; }
     .container { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
     
     /* ヘッダー */
@@ -23,7 +23,7 @@
     .input-group label { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 4px; font-weight: bold; }
     .input-group input { width: 100%; background: #0f172a; border: 1px solid #475569; color: #f8fafc; padding: 10px; border-radius: 8px; font-size: 18px; font-weight: bold; text-align: right; }
 
-    /* 品目ボタングリッド */
+    /* 品目グリッド */
     .section-title { font-size: 12px; color: #94a3b8; font-weight: bold; margin-bottom: 4px; }
     .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .item-btn { background: #1e293b; border: 2px solid #334155; color: #f8fafc; padding: 10px 8px; border-radius: 10px; text-align: left; cursor: pointer; transition: all 0.15s ease; }
@@ -32,12 +32,12 @@
     .item-rate { font-size: 11px; color: #94a3b8; margin-top: 2px; }
     .item-btn.active .item-rate { color: #93c5fd; }
 
-    /* 重量入力 */
+    /* 重量入力（インライン✕ボタン） */
     .weight-card { background: #1e293b; border-radius: 14px; padding: 12px; border: 1px solid #334155; }
-    .weight-input-wrapper { display: flex; gap: 8px; align-items: center; }
-    .weight-input { flex: 1; background: #0f172a; border: 1px solid #475569; color: #38bdf8; padding: 10px; border-radius: 8px; font-size: 26px; font-weight: bold; text-align: right; }
-    .unit { font-size: 18px; color: #94a3b8; font-weight: bold; }
-    .btn-clear { background: #334155; border: none; color: #f8fafc; padding: 10px 14px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
+    .weight-box { position: relative; display: flex; align-items: center; }
+    .weight-input { width: 100%; background: #0f172a; border: 1px solid #475569; color: #38bdf8; padding: 10px 60px 10px 12px; border-radius: 8px; font-size: 26px; font-weight: bold; text-align: right; }
+    .unit-text { position: absolute; right: 40px; font-size: 16px; color: #94a3b8; font-weight: bold; pointer-events: none; }
+    .btn-inline-clear { position: absolute; right: 8px; background: #334155; border: none; color: #94a3b8; width: 28px; height: 28px; border-radius: 50%; font-size: 14px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
     /* 結果カード */
     .result-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 16px; padding: 14px; border: 2px solid #fbbf24; display: flex; flex-direction: column; align-items: center; text-align: center; }
@@ -46,6 +46,10 @@
     .result-values span { font-weight: bold; color: #38bdf8; }
     .cipher-label { font-size: 11px; font-weight: bold; color: #fbbf24; letter-spacing: 2px; }
     .cipher-badge { font-size: 40px; font-weight: 900; color: #fbbf24; letter-spacing: 6px; text-shadow: 0 0 16px rgba(251, 191, 36, 0.4); min-height: 50px; line-height: 50px; }
+
+    /* 特大次へボタン */
+    .btn-next { width: 100%; background: #2563eb; border: none; color: #ffffff; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+    .btn-next:active { background: #1d4ed8; }
 
     /* モーダル */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; padding: 16px; overflow-y: auto; }
@@ -58,7 +62,7 @@
     .master-row input.name { flex: 2; }
     .master-row input.rate { flex: 1; text-align: right; }
     .btn-del { background: #dc2626; border: none; color: #fff; padding: 8px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
-    .btn-add-item { width: 100%; background: #2563eb; border: none; color: #fff; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-top: 8px; cursor: pointer; }
+    .btn-add-item { width: 100%; background: #334155; border: 1px dashed #64748b; color: #93c5fd; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-top: 8px; cursor: pointer; }
     .btn-save-master { width: 100%; background: #16a34a; border: none; color: #fff; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; margin-top: 12px; cursor: pointer; }
   </style>
 </head>
@@ -88,10 +92,10 @@
 
   <div class="weight-card">
     <div class="section-title">はかりの計量値</div>
-    <div class="weight-input-wrapper">
+    <div class="weight-box">
       <input type="number" id="weight" class="weight-input" placeholder="0" inputmode="decimal" oninput="calculate()">
-      <span class="unit">g</span>
-      <button class="btn-clear" onclick="clearWeight()">クリア</button>
+      <span class="unit-text">g</span>
+      <button class="btn-inline-clear" onclick="clearWeight()">✕</button>
     </div>
   </div>
 
@@ -103,6 +107,9 @@
     <div class="cipher-label">確定原価 符牒コード</div>
     <div class="cipher-badge" id="cipherCode">----</div>
   </div>
+
+  <!-- 最下部の特大リセットボタン -->
+  <button class="btn-next" onclick="clearWeight()">次の品物を測る（クリア）</button>
 </div>
 
 <div class="modal" id="masterModal">
@@ -149,12 +156,10 @@
     });
   }
 
-  // 確定符牒ロジック (5原則完全準拠)
   function getCipher(priceYen) {
     if (!priceYen || priceYen < 1000) return "----";
     const num = Math.floor(priceYen);
 
-    // 1. プレフィックス
     let prefix = "";
     if (num >= 1000000) prefix = "テ";
     else if (num >= 100000) prefix = "チ";
@@ -165,12 +170,10 @@
     const digits = String(num);
     const trimmed = digits.replace(/0+$/, '');
 
-    // 1000円・20000円等の切りのいい数字 -> 数字+オ
     if (trimmed.length === 1 && digits.length >= 4) {
       return (prefix + map[trimmed] + "オ").slice(0, 4);
     }
 
-    // 数字コード変換と連続オ判定
     let res = [];
     let i = 0;
     while (i < trimmed.length) {
@@ -191,7 +194,6 @@
       if (res.length >= 3) break;
     }
 
-    // 4文字打ち切り
     return (prefix + res.join("")).slice(0, 4);
   }
 
@@ -211,8 +213,10 @@
   }
 
   function clearWeight() {
-    document.getElementById('weight').value = '';
+    const input = document.getElementById('weight');
+    input.value = '';
     calculate();
+    input.focus();
   }
 
   function openMasterModal() {
