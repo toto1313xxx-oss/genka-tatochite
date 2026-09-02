@@ -69,8 +69,25 @@
       background: linear-gradient(135deg, #92661d 0%, #d4af37 100%); border-color: #fbf5b7; color: #0c0d10;
     }
 
-    /* ロット設定カード */
+    /* ロット・仕入先設定カード */
     .lot-card { background: var(--card-bg); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; border: 1px solid rgba(212, 175, 55, 0.3); }
+    .input-label { display: block; font-size: 11px; color: #a1a1aa; margin-bottom: 5px; font-weight: bold; letter-spacing: 1px; }
+
+    /* 会場切り替えタブ */
+    .venue-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 4px; }
+    .venue-btn {
+      background: #0a0b0e; border: 1px solid #3f3f46; color: #a1a1aa; padding: 8px 0; border-radius: 6px;
+      font-size: 12px; font-weight: bold; cursor: pointer; text-align: center;
+    }
+    .venue-btn.active {
+      background: linear-gradient(135deg, #92661d, #d4af37); color: #0c0d10; border-color: #fef08a; font-weight: 900;
+      box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+    }
+    #customVenueInput {
+      width: 100%; background: #0a0b0e; border: 1px solid #d4af37; color: #fef08a; padding: 8px 10px; border-radius: 6px;
+      font-size: 14px; font-weight: bold; margin-top: 4px; display: none;
+    }
+
     .lot-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .input-group label { display: block; font-size: 11px; color: #a1a1aa; margin-bottom: 4px; font-weight: bold; }
     .input-group input { width: 100%; background: #0a0b0e; border: 1px solid #3f3f46; color: #fef08a; padding: 8px 10px; border-radius: 8px; font-size: 15px; font-weight: bold; }
@@ -219,31 +236,38 @@
 
   <!-- ロット・仕入先設定 -->
   <div class="lot-card">
-    <div class="lot-row-2col">
-      <div class="input-group">
-        <label>オークション先（市場）</label>
-        <input type="text" id="auctionName" placeholder="例: 毎美会" value="東京市場">
+    <div>
+      <span class="input-label">オークション会場（仕入先）</span>
+      <div class="venue-tabs">
+        <button class="venue-btn active" onclick="selectVenue('神栄会', this)">神栄会</button>
+        <button class="venue-btn" onclick="selectVenue('驟宝会', this)">驟宝会</button>
+        <button class="venue-btn" onclick="selectVenue('エイト', this)">エイト</button>
+        <button class="venue-btn" onclick="selectVenue('買取', this)">買取</button>
+        <button class="venue-btn" onclick="selectVenue('その他', this)">その他</button>
       </div>
-      <div class="input-group">
-        <label>山の名前（ロット名）</label>
-        <input type="text" id="lotName" placeholder="例: 象牙山#1" value="2月象牙山">
-      </div>
+      <input type="text" id="customVenueInput" placeholder="会場名を入力してください">
     </div>
+
+    <div class="input-group">
+      <label>山の名前（ロット名）</label>
+      <input type="text" id="lotName" placeholder="例: 象牙山#1">
+    </div>
+
     <div class="lot-row-2col">
       <div class="input-group">
         <label>総買値 (千円)</label>
-        <input type="number" id="buyPrice" class="numeric" value="100" inputmode="numeric" oninput="calculate()">
+        <input type="number" id="buyPrice" class="numeric" placeholder="0" inputmode="numeric" oninput="calculate()">
       </div>
       <div class="input-group">
         <label>全体見積り (千円)</label>
-        <input type="number" id="lotEstimate" class="numeric" value="200" inputmode="numeric" oninput="calculate()">
+        <input type="number" id="lotEstimate" class="numeric" placeholder="0" inputmode="numeric" oninput="calculate()">
       </div>
     </div>
     
     <!-- リアルタイム掛率表示 -->
     <div class="ratio-bar">
       <span class="ratio-label">買値比率（買値 ÷ 見積総額）:</span>
-      <span class="ratio-val" id="lotRatioBadge">50.0%</span>
+      <span class="ratio-val" id="lotRatioBadge">---- %</span>
     </div>
   </div>
 
@@ -404,6 +428,30 @@
     }
   }
 
+  /* 会場選択タブ制御 */
+  let selectedVenue = '神栄会';
+  function selectVenue(name, btn) {
+    document.querySelectorAll('.venue-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedVenue = name;
+
+    const customInput = document.getElementById('customVenueInput');
+    if (name === 'その他') {
+      customInput.style.display = 'block';
+      customInput.focus();
+    } else {
+      customInput.style.display = 'none';
+      customInput.value = '';
+    }
+  }
+
+  function getActiveVenueName() {
+    if (selectedVenue === 'その他') {
+      return document.getElementById('customVenueInput').value.trim() || 'その他';
+    }
+    return selectedVenue;
+  }
+
   const defaultItems = [
     { name: '象牙バングル大', rate: 250 },
     { name: '象牙アクセSS', rate: 200 },
@@ -420,7 +468,7 @@
   let gasUrl = localStorage.getItem('fushimidou_gas_url') || '';
 
   function getRateColor(rate, minRate, maxRate) {
-    if (maxRate === minRate) return 'linear-gradient(135deg, #1e293b, #0f172a)';
+    if (maxRate === minRate) return 'linear-gradient(135deg, #1e3a8a, #0f172a)';
     const ratio = Math.min(Math.max((rate - minRate) / (maxRate - minRate), 0), 1);
     const hue = Math.round((1 - ratio) * 220); 
     return `linear-gradient(145deg, hsl(${hue}, 65%, 28%) 0%, hsl(${hue}, 70%, 14%) 100%)`;
@@ -525,15 +573,21 @@
   let curCalculatedData = null;
 
   function calculate() {
-    const buyPrice = parseFloat(document.getElementById('buyPrice').value) || 0;
-    const lotEstimate = parseFloat(document.getElementById('lotEstimate').value) || 0;
+    const buyPriceInput = document.getElementById('buyPrice').value;
+    const lotEstimateInput = document.getElementById('lotEstimate').value;
+    const buyPrice = parseFloat(buyPriceInput) || 0;
+    const lotEstimate = parseFloat(lotEstimateInput) || 0;
     const weight = parseFloat(document.getElementById('weight').value) || 0;
 
     // 比率計算
-    const ratio = (lotEstimate > 0) ? (buyPrice / lotEstimate) : 0;
-    const ratioPercent = (ratio * 100).toFixed(1) + '%';
-    document.getElementById('lotRatioBadge').textContent = ratioPercent;
+    if (lotEstimate > 0 && buyPrice > 0) {
+      const ratio = buyPrice / lotEstimate;
+      document.getElementById('lotRatioBadge').textContent = (ratio * 100).toFixed(1) + '%';
+    } else {
+      document.getElementById('lotRatioBadge').textContent = '---- %';
+    }
 
+    const ratio = (lotEstimate > 0) ? (buyPrice / lotEstimate) : 0;
     const indivEst = selectedItem.rate * (weight / 1000);
     const cost = indivEst * ratio;
     const actualYen = Math.round(cost * 1000);
@@ -544,19 +598,18 @@
     document.getElementById('actualYen').textContent = actualYen.toLocaleString();
     document.getElementById('cipherCode').textContent = cipher;
 
-    // シート保存用データ（円単位実額 & 比率）
     curCalculatedData = {
       date: new Date().toLocaleString('ja-JP'),
-      auction: document.getElementById('auctionName').value.trim(),
-      lotName: document.getElementById('lotName').value.trim(),
+      auction: getActiveVenueName(),
+      lotName: document.getElementById('lotName').value.trim() || '未設定',
       itemName: selectedItem.name,
       weight: weight,
-      buyPriceYen: Math.round(buyPrice * 1000),         // 総買値（円）
-      lotEstimateYen: Math.round(lotEstimate * 1000),   // 全体見積（円）
-      ratioPercent: ratioPercent,                       // 比率
-      indivEstYen: Math.round(indivEst * 1000),         // 個別見積（円）
-      actualYen: actualYen,                             // 確定原価（円）
-      cipher: cipher                                    // 符牒
+      buyPriceYen: Math.round(buyPrice * 1000),
+      lotEstimateYen: Math.round(lotEstimate * 1000),
+      ratioPercent: (ratio > 0) ? (ratio * 100).toFixed(1) + '%' : '0.0%',
+      indivEstYen: Math.round(indivEst * 1000),
+      actualYen: actualYen,
+      cipher: cipher
     };
   }
 
@@ -601,7 +654,7 @@
     setTimeout(() => { t.style.display = 'none'; }, 2000);
   }
 
-  /* テンキー相互変換モード */
+  /* テンキー相互変換 */
   let currentConvMode = 'priceToCipher';
   let curInputStr = '';
 
