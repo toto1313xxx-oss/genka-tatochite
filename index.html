@@ -60,6 +60,7 @@
     .fushimidou-logo span.sub-title {
       font-size: 11px; letter-spacing: 1px; color: #94a3b8; -webkit-text-fill-color: #94a3b8;
       font-weight: 600; border-left: 1px solid #475569; padding-left: 8px; margin-left: 4px;
+      transition: color 0.3s ease;
     }
     .header-actions { display: flex; gap: 6px; }
     .btn-header {
@@ -181,7 +182,7 @@
     .key-btn.fn { background: #7f1d1d; border-color: #b91c1c; color: #ffffff; }
     .key-btn.accent { background: linear-gradient(180deg, #92661d, #d4af37); color: #000; font-weight: 900; }
 
-    /* マスタ編集リスト（ドラッグ＆スライド用スタイル） */
+    /* マスタ編集リスト（ドラッグ＆スライド用） */
     .master-row {
       display: grid;
       grid-template-columns: 28px 1fr 85px 36px;
@@ -418,7 +419,7 @@
       <div class="setting-title">📊 スプレッドシート連携（組み込み済み）</div>
       <div class="url-input-row">
         <input type="text" id="inputGasUrl" placeholder="GAS WebアプリURL" style="flex:1; background:#181920; border:1px solid #52525b; color:#38bdf8; padding:8px; border-radius:6px; font-size:12px;">
-        <button class="btn-connect-gas" onclick="connectAndPullMaster()">再取得</button>
+        <button class="btn-connect-gas" onclick="connectAndPullMaster()">手動で再取得</button>
       </div>
 
       <div style="margin-top:10px;">
@@ -706,15 +707,17 @@
     setTimeout(() => { t.style.display = 'none'; }, 2000);
   }
 
-  /* URL接続・マスタ取得 */
+  /* URL接続・手動再取得 */
   function connectAndPullMaster() {
-    const url = document.getElementById('inputGasUrl').value.trim();
+    const url = document.getElementById('inputGasUrl').value.trim() || gasUrl;
     if (!url) {
       alert('GASのURLを入力してください');
       return;
     }
 
-    fetch(url)
+    const noCacheUrl = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+
+    fetch(noCacheUrl)
       .then(res => res.json())
       .then(res => {
         if (res.status === 'success' && res.items && res.items.length > 0) {
@@ -722,7 +725,10 @@
           localStorage.setItem('fushimidou_gas_url', gasUrl);
           items = res.items;
           localStorage.setItem('app_master_items', JSON.stringify(items));
-          selectedItem = items[0];
+          
+          if (!items.some(i => i.name === selectedItem.name)) {
+            selectedItem = items[0];
+          }
           renderGrid();
           refreshMasterModalList();
           calculate();
@@ -736,21 +742,43 @@
       });
   }
 
-  /* 起動時の自動バックグラウンド取得 */
+  /* 起動時の自動バックグラウンド取得（キャッシュ防止＆UI同期通知） */
   function syncMasterFromSheetSilently() {
     if (!gasUrl) return;
-    fetch(gasUrl)
+
+    // キャッシュを防ぐためタイムスタンプパラメータを付与
+    const noCacheUrl = gasUrl + (gasUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
+
+    fetch(noCacheUrl)
       .then(res => res.json())
       .then(res => {
         if (res.status === 'success' && res.items && res.items.length > 0) {
           items = res.items;
           localStorage.setItem('app_master_items', JSON.stringify(items));
-          selectedItem = items[0];
+
+          if (!items.some(i => i.name === selectedItem.name)) {
+            selectedItem = items[0];
+          }
+
           renderGrid();
           calculate();
+
+          // ヘッダーのサブタイトルを一瞬「同期済 ✓」に変更
+          const sub = document.querySelector('.sub-title');
+          if (sub) {
+            const orgText = sub.textContent;
+            sub.textContent = '同期完了 ✓';
+            sub.style.color = '#38bdf8';
+            setTimeout(() => {
+              sub.textContent = orgText;
+              sub.style.color = '';
+            }, 1800);
+          }
         }
       })
-      .catch(() => {});
+      .catch(err => {
+        console.log('自動同期スキップ（オフラインまたは初回）:', err);
+      });
   }
 
   /* 設定モーダル操作 & Sortable初期化 */
