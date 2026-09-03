@@ -11,6 +11,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800;900&display=swap" rel="stylesheet">
+  <!-- モバイルタッチ対応の並び替えライブラリ -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
   <style>
     :root {
       --bg-main: #0c0d10;
@@ -179,8 +181,44 @@
     .key-btn.fn { background: #7f1d1d; border-color: #b91c1c; color: #ffffff; }
     .key-btn.accent { background: linear-gradient(180deg, #92661d, #d4af37); color: #000; font-weight: 900; }
 
-    /* マスタ編集リスト */
-    .master-row { display: grid; grid-template-columns: 1fr 85px 44px; gap: 6px; margin-bottom: 8px; align-items: center; }
+    /* マスタ編集リスト（ドラッグ＆スライド用スタイル追加） */
+    .master-row {
+      display: grid;
+      grid-template-columns: 28px 1fr 85px 36px;
+      gap: 6px;
+      margin-bottom: 8px;
+      align-items: center;
+      background: #111216;
+      border: 1px solid #27272a;
+      padding: 6px;
+      border-radius: 8px;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .drag-handle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #71717a;
+      cursor: grab;
+      touch-action: none; /* スマホ操作での画面スクロール競合を防止 */
+      user-select: none;
+    }
+    .drag-handle:active {
+      cursor: grabbing;
+      color: var(--gold-text);
+    }
+    /* ドラッグ中の要素の外観 */
+    .sortable-ghost {
+      opacity: 0.35;
+      background: #27272a !important;
+      border: 1px dashed var(--gold-text) !important;
+    }
+    .sortable-chosen {
+      background: #1e1f26 !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    }
+
     .master-row input { width: 100%; background: #0a0b0e; border: 1px solid #3f3f46; color: #f8fafc; padding: 8px 6px; border-radius: 6px; font-size: 13px; }
     .master-row input.rate { text-align: right; color: #fef08a; }
     .btn-del { width: 100%; height: 35px; background: #7f1d1d; border: 1px solid #b91c1c; color: #fff; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; }
@@ -376,7 +414,7 @@
       <button class="btn-close" onclick="closeMasterModal()">✕</button>
     </div>
     
-    <!-- ① 連携・パスコード設定ブロック（マスタに影響を与えない独立設定） -->
+    <!-- ① 連携・パスコード設定ブロック -->
     <div style="background:#0a0b0e; border:1px solid #3f3f46; border-radius:10px; padding:12px; margin-bottom:14px;">
       <div class="setting-title">📊 スプレッドシート連携（新規端末はここから同期）</div>
       <div class="url-input-row">
@@ -393,7 +431,10 @@
     </div>
 
     <!-- ② 品目マスタ編集ブロック -->
-    <div class="setting-title">品目・単価マスタ（全端末共通）</div>
+    <div class="setting-title" style="display:flex; justify-content:space-between; align-items:center;">
+      <span>品目・単価マスタ（全端末共通）</span>
+      <span style="font-size:10px; color:#a1a1aa; font-weight:normal;">☰ を掴んでスライドで並び替え</span>
+    </div>
     <div id="masterList"></div>
     <button class="btn-add-item" onclick="addNewMasterRow()">＋ 新しい品目を追加</button>
     
@@ -711,12 +752,25 @@
       .catch(() => {});
   }
 
-  /* 設定モーダル操作 */
+  /* 設定モーダル操作 & Sortable初期化 */
+  let sortableInstance = null;
+
   function openMasterModal() {
     refreshMasterModalList();
     document.getElementById('inputGasUrl').value = gasUrl;
     document.getElementById('inputNewPasscode').value = '';
     document.getElementById('masterModal').style.display = 'block';
+
+    // タップ＆スライド並び替えの有効化
+    const list = document.getElementById('masterList');
+    if (sortableInstance) sortableInstance.destroy();
+    sortableInstance = new Sortable(list, {
+      handle: '.drag-handle', // つまみアイコン(☰)のみ掴める
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      chosenClass: 'sortable-chosen',
+      touchAction: 'none'
+    });
   }
   function closeMasterModal() { document.getElementById('masterModal').style.display = 'none'; }
 
@@ -730,6 +784,7 @@
     const div = document.createElement('div');
     div.className = 'master-row';
     div.innerHTML = `
+      <div class="drag-handle" title="ドラッグして並び替え">☰</div>
       <input type="text" class="name" placeholder="品目名" value="${name}">
       <input type="number" class="rate" placeholder="単価" value="${rate}">
       <button class="btn-del" onclick="this.parentElement.remove()">✕</button>
@@ -737,9 +792,14 @@
     return div;
   }
 
-  function addNewMasterRow() { document.getElementById('masterList').appendChild(createMasterRow()); }
+  function addNewMasterRow() {
+    const list = document.getElementById('masterList');
+    const newRow = createMasterRow();
+    list.appendChild(newRow);
+    newRow.querySelector('.name').focus();
+  }
 
-  /* 連携・パスコードのみ保存（マスタに触らない安全保存） */
+  /* 連携・パスコードのみ保存 */
   function saveConnectionSettingsOnly() {
     const url = document.getElementById('inputGasUrl').value.trim();
     gasUrl = url;
@@ -779,7 +839,11 @@
 
     items = newItems;
     localStorage.setItem('app_master_items', JSON.stringify(items));
-    selectedItem = items[0];
+    
+    // 選択中アイテムが存在しなくなった場合は先頭を選択
+    if (!items.some(i => i.name === selectedItem.name)) {
+      selectedItem = items[0];
+    }
     renderGrid();
     calculate();
 
