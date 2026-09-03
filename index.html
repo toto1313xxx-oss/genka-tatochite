@@ -179,15 +179,20 @@
     .key-btn.fn { background: #7f1d1d; border-color: #b91c1c; color: #ffffff; }
     .key-btn.accent { background: linear-gradient(180deg, #92661d, #d4af37); color: #000; font-weight: 900; }
 
+    /* マスタ編集リスト */
     .master-row { display: grid; grid-template-columns: 1fr 85px 44px; gap: 6px; margin-bottom: 8px; align-items: center; }
     .master-row input { width: 100%; background: #0a0b0e; border: 1px solid #3f3f46; color: #f8fafc; padding: 8px 6px; border-radius: 6px; font-size: 13px; }
     .master-row input.rate { text-align: right; color: #fef08a; }
     .btn-del { width: 100%; height: 35px; background: #7f1d1d; border: 1px solid #b91c1c; color: #fff; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; }
     .btn-add-item { width: 100%; background: #272a34; border: 1px dashed #71717a; color: #e5c158; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-top: 8px; cursor: pointer; }
+    
+    /* 設定ブロック */
     .setting-block { margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(212, 175, 55, 0.3); }
-    .setting-title { font-size: 12px; font-weight: bold; color: var(--gold-text); margin-bottom: 4px; }
-    .btn-save-master { width: 100%; background: linear-gradient(180deg, #d4af37 0%, #92661d 100%); border: 1px solid #fef08a; color: #0c0d10; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: 900; margin-top: 12px; cursor: pointer; }
-    .btn-sync-now { width: 100%; background: #0284c7; border: 1px solid #38bdf8; color: #fff; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; margin-top: 8px; cursor: pointer; }
+    .setting-title { font-size: 12px; font-weight: bold; color: var(--gold-text); margin-bottom: 6px; }
+    .url-input-row { display: flex; gap: 6px; align-items: center; }
+    .btn-connect-gas { background: #0284c7; border: 1px solid #38bdf8; color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; }
+    .btn-save-conn { width: 100%; background: #334155; border: 1px solid #64748b; color: #f8fafc; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; margin-top: 8px; cursor: pointer; }
+    .btn-save-master { width: 100%; background: linear-gradient(180deg, #d4af37 0%, #92661d 100%); border: 1px solid #fef08a; color: #0c0d10; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: 900; margin-top: 10px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -363,29 +368,37 @@
   </div>
 </div>
 
-<!-- マスタ・連携設定モーダル -->
+<!-- マスタ・安全設定モーダル -->
 <div class="modal" id="masterModal">
   <div class="modal-content">
     <div class="modal-header">
-      <div class="modal-title">マスタ & 保管設定</div>
+      <div class="modal-title">マスタ & 端末設定</div>
       <button class="btn-close" onclick="closeMasterModal()">✕</button>
     </div>
     
+    <!-- ① 連携・パスコード設定ブロック（マスタに影響を与えない独立設定） -->
+    <div style="background:#0a0b0e; border:1px solid #3f3f46; border-radius:10px; padding:12px; margin-bottom:14px;">
+      <div class="setting-title">📊 スプレッドシート連携（新規端末はここから同期）</div>
+      <div class="url-input-row">
+        <input type="text" id="inputGasUrl" placeholder="GAS WebアプリURLを貼り付け" style="flex:1; background:#181920; border:1px solid #52525b; color:#38bdf8; padding:8px; border-radius:6px; font-size:12px;">
+        <button class="btn-connect-gas" onclick="connectAndPullMaster()">接続 & 取得</button>
+      </div>
+
+      <div style="margin-top:10px;">
+        <div class="setting-title" style="font-size:11px;">🔒 起動パスコード変更（数字6桁）</div>
+        <input type="password" id="inputNewPasscode" maxlength="6" inputmode="numeric" placeholder="変更する場合のみ入力" style="width:100%; background:#181920; border:1px solid #52525b; color:#fef08a; padding:8px; border-radius:6px; font-size:14px; letter-spacing:4px; text-align:center;">
+      </div>
+
+      <button class="btn-save-conn" onclick="saveConnectionSettingsOnly()">設定（URL・パスコード）のみ保存</button>
+    </div>
+
+    <!-- ② 品目マスタ編集ブロック -->
+    <div class="setting-title">品目・単価マスタ（全端末共通）</div>
     <div id="masterList"></div>
     <button class="btn-add-item" onclick="addNewMasterRow()">＋ 新しい品目を追加</button>
-
-    <div class="setting-block">
-      <div class="setting-title">📊 スプレッドシート連携URL (GAS WebアプリURL)</div>
-      <input type="text" id="inputGasUrl" placeholder="https://script.google.com/macros/s/.../exec" style="width:100%; background:#0a0b0e; border:1px solid #52525b; color:#38bdf8; padding:8px; border-radius:6px; font-size:12px;">
-      <button class="btn-sync-now" onclick="syncMasterFromSheet(true)">☁️ スプレッドシートから品目マスタを取得</button>
-    </div>
-
-    <div class="setting-block">
-      <div class="setting-title">🔒 起動パスコード変更（6桁）</div>
-      <input type="password" id="inputNewPasscode" maxlength="6" inputmode="numeric" placeholder="新しい6桁番号" style="width:100%; background:#0a0b0e; border:1px solid #52525b; color:#fef08a; padding:8px; border-radius:6px; font-size:15px; letter-spacing:4px; text-align:center;">
-    </div>
-
-    <button class="btn-save-master" onclick="saveMasterData()">変更を全員（スプレッド）に同期保存</button>
+    
+    <!-- 明示的にクラウドマスタを上書きするボタン -->
+    <button class="btn-save-master" onclick="saveMasterDataSafe()">品目変更をスプレッドシートへ同期更新</button>
   </div>
 </div>
 
@@ -651,8 +664,38 @@
     setTimeout(() => { t.style.display = 'none'; }, 2000);
   }
 
-  /* クラウド同期（スプレッドシートからの品目マスタ自動読み込み） */
-  function syncMasterFromSheet(isManual = false) {
+  /* 新規端末用：URLに接続してマスタを安全吸い上げ */
+  function connectAndPullMaster() {
+    const url = document.getElementById('inputGasUrl').value.trim();
+    if (!url) {
+      alert('GASのURLを入力してください');
+      return;
+    }
+
+    fetch(url)
+      .then(res => res.json())
+      .then(res => {
+        if (res.status === 'success' && res.items && res.items.length > 0) {
+          gasUrl = url;
+          localStorage.setItem('fushimidou_gas_url', gasUrl);
+          items = res.items;
+          localStorage.setItem('app_master_items', JSON.stringify(items));
+          selectedItem = items[0];
+          renderGrid();
+          refreshMasterModalList();
+          calculate();
+          showToast('マスタを安全に同期しました');
+        } else {
+          alert('接続できましたが、シートに品目データが見つかりませんでした');
+        }
+      })
+      .catch(err => {
+        alert('接続エラー: URLが正しいか、GASが全員アクセス可能でデプロイされているか確認してください\n' + err);
+      });
+  }
+
+  /* 起動時の自動バックグラウンド取得 */
+  function syncMasterFromSheetSilently() {
     if (!gasUrl) return;
     fetch(gasUrl)
       .then(res => res.json())
@@ -663,12 +706,95 @@
           selectedItem = items[0];
           renderGrid();
           calculate();
-          if (isManual) showToast('最新マスタを取得しました');
         }
       })
-      .catch(err => {
-        if (isManual) alert('取得エラー: ' + err);
+      .catch(() => {});
+  }
+
+  /* 設定モーダル操作 */
+  function openMasterModal() {
+    refreshMasterModalList();
+    document.getElementById('inputGasUrl').value = gasUrl;
+    document.getElementById('inputNewPasscode').value = '';
+    document.getElementById('masterModal').style.display = 'block';
+  }
+  function closeMasterModal() { document.getElementById('masterModal').style.display = 'none'; }
+
+  function refreshMasterModalList() {
+    const list = document.getElementById('masterList');
+    list.innerHTML = '';
+    items.forEach(item => list.appendChild(createMasterRow(item.name, item.rate)));
+  }
+
+  function createMasterRow(name = '', rate = '') {
+    const div = document.createElement('div');
+    div.className = 'master-row';
+    div.innerHTML = `
+      <input type="text" class="name" placeholder="品目名" value="${name}">
+      <input type="number" class="rate" placeholder="単価" value="${rate}">
+      <button class="btn-del" onclick="this.parentElement.remove()">✕</button>
+    `;
+    return div;
+  }
+
+  function addNewMasterRow() { document.getElementById('masterList').appendChild(createMasterRow()); }
+
+  /* 連携・パスコードのみ保存（マスタに触らない安全保存） */
+  function saveConnectionSettingsOnly() {
+    const url = document.getElementById('inputGasUrl').value.trim();
+    gasUrl = url;
+    localStorage.setItem('fushimidou_gas_url', gasUrl);
+
+    const newPass = document.getElementById('inputNewPasscode').value.trim();
+    if (newPass) {
+      if (/^\d{6}$/.test(newPass)) {
+        currentPin = newPass;
+        localStorage.setItem('fushimidou_pin', newPass);
+      } else {
+        alert('パスコードは数字6桁で入力してください');
+        return;
+      }
+    }
+    showToast('設定を保存しました');
+  }
+
+  /* 品目マスタを全端末（スプレッドシート）へ上書き同期 */
+  function saveMasterDataSafe() {
+    const rows = document.querySelectorAll('.master-row');
+    const newItems = [];
+    rows.forEach(row => {
+      const name = row.querySelector('.name').value.trim();
+      const rate = parseFloat(row.querySelector('.rate').value) || 0;
+      if (name) newItems.push({ name, rate });
+    });
+
+    if (newItems.length === 0) {
+      alert('最低1つの品目を設定してください');
+      return;
+    }
+
+    if (!confirm('スプレッドシートの商品マスタを上書き更新しますか？\n（他のスタッフのアプリにも反映されます）')) {
+      return;
+    }
+
+    items = newItems;
+    localStorage.setItem('app_master_items', JSON.stringify(items));
+    selectedItem = items[0];
+    renderGrid();
+    calculate();
+
+    if (gasUrl) {
+      fetch(gasUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: "updateMaster", items: newItems })
+      }).then(() => {
+        showToast('スプレッドシートのマスタを更新しました');
       });
+    }
+
+    closeMasterModal();
   }
 
   /* テンキー相互変換 */
@@ -735,82 +861,9 @@
     }
   }
 
-  function openMasterModal() {
-    const list = document.getElementById('masterList');
-    list.innerHTML = '';
-    items.forEach(item => list.appendChild(createMasterRow(item.name, item.rate)));
-    document.getElementById('inputGasUrl').value = gasUrl;
-    document.getElementById('inputNewPasscode').value = '';
-    document.getElementById('masterModal').style.display = 'block';
-  }
-  function closeMasterModal() { document.getElementById('masterModal').style.display = 'none'; }
-
-  function createMasterRow(name = '', rate = '') {
-    const div = document.createElement('div');
-    div.className = 'master-row';
-    div.innerHTML = `
-      <input type="text" class="name" placeholder="品目名" value="${name}">
-      <input type="number" class="rate" placeholder="単価" value="${rate}">
-      <button class="btn-del" onclick="this.parentElement.remove()">✕</button>
-    `;
-    return div;
-  }
-
-  function addNewMasterRow() { document.getElementById('masterList').appendChild(createMasterRow()); }
-
-  function saveMasterData() {
-    const rows = document.querySelectorAll('.master-row');
-    const newItems = [];
-    rows.forEach(row => {
-      const name = row.querySelector('.name').value.trim();
-      const rate = parseFloat(row.querySelector('.rate').value) || 0;
-      if (name) newItems.push({ name, rate });
-    });
-
-    if (newItems.length === 0) {
-      alert('最低1つの品目を設定してください');
-      return;
-    }
-
-    gasUrl = document.getElementById('inputGasUrl').value.trim();
-    localStorage.setItem('fushimidou_gas_url', gasUrl);
-
-    const newPass = document.getElementById('inputNewPasscode').value.trim();
-    if (newPass) {
-      if (/^\d{6}$/.test(newPass)) {
-        currentPin = newPass;
-        localStorage.setItem('fushimidou_pin', newPass);
-      } else {
-        alert('パスコードは数字6桁で入力してください');
-        return;
-      }
-    }
-
-    // 1. ローカル保存
-    items = newItems;
-    localStorage.setItem('app_master_items', JSON.stringify(items));
-    selectedItem = items[0];
-    renderGrid();
-    calculate();
-
-    // 2. クラウド（スプレッドシート）へ全端末共有同期
-    if (gasUrl) {
-      fetch(gasUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: "updateMaster", items: newItems })
-      }).then(() => {
-        showToast('全端末共通マスタを更新しました');
-      });
-    }
-
-    closeMasterModal();
-  }
-
-  // 起動時処理
+  // 起動時初期化
   renderGrid();
-  syncMasterFromSheet(false);
+  syncMasterFromSheetSilently();
 </script>
 </body>
 </html>
