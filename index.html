@@ -73,7 +73,6 @@
     .lot-card { background: var(--card-bg); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; border: 1px solid rgba(212, 175, 55, 0.3); }
     .input-label { display: block; font-size: 11px; color: #a1a1aa; margin-bottom: 5px; font-weight: bold; letter-spacing: 1px; }
 
-    /* 会場切り替えタブ */
     .venue-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 4px; }
     .venue-btn {
       background: #0a0b0e; border: 1px solid #3f3f46; color: #a1a1aa; padding: 8px 0; border-radius: 6px;
@@ -93,7 +92,6 @@
     .input-group input { width: 100%; background: #0a0b0e; border: 1px solid #3f3f46; color: #fef08a; padding: 8px 10px; border-radius: 8px; font-size: 15px; font-weight: bold; }
     .input-group input.numeric { text-align: right; font-size: 18px; }
     
-    /* 比率バッジ */
     .ratio-bar {
       display: flex; justify-content: space-between; align-items: center; background: #0a0b0e;
       border: 1px dashed rgba(212, 175, 55, 0.4); border-radius: 8px; padding: 6px 12px; font-size: 12px;
@@ -189,6 +187,7 @@
     .setting-block { margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(212, 175, 55, 0.3); }
     .setting-title { font-size: 12px; font-weight: bold; color: var(--gold-text); margin-bottom: 4px; }
     .btn-save-master { width: 100%; background: linear-gradient(180deg, #d4af37 0%, #92661d 100%); border: 1px solid #fef08a; color: #0c0d10; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: 900; margin-top: 12px; cursor: pointer; }
+    .btn-sync-now { width: 100%; background: #0284c7; border: 1px solid #38bdf8; color: #fff; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; margin-top: 8px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -264,7 +263,6 @@
       </div>
     </div>
     
-    <!-- リアルタイム掛率表示 -->
     <div class="ratio-bar">
       <span class="ratio-label">買値比率（買値 ÷ 見積総額）:</span>
       <span class="ratio-val" id="lotRatioBadge">---- %</span>
@@ -379,6 +377,7 @@
     <div class="setting-block">
       <div class="setting-title">📊 スプレッドシート連携URL (GAS WebアプリURL)</div>
       <input type="text" id="inputGasUrl" placeholder="https://script.google.com/macros/s/.../exec" style="width:100%; background:#0a0b0e; border:1px solid #52525b; color:#38bdf8; padding:8px; border-radius:6px; font-size:12px;">
+      <button class="btn-sync-now" onclick="syncMasterFromSheet(true)">☁️ スプレッドシートから品目マスタを取得</button>
     </div>
 
     <div class="setting-block">
@@ -386,7 +385,7 @@
       <input type="password" id="inputNewPasscode" maxlength="6" inputmode="numeric" placeholder="新しい6桁番号" style="width:100%; background:#0a0b0e; border:1px solid #52525b; color:#fef08a; padding:8px; border-radius:6px; font-size:15px; letter-spacing:4px; text-align:center;">
     </div>
 
-    <button class="btn-save-master" onclick="saveMasterData()">設定を保存して反映</button>
+    <button class="btn-save-master" onclick="saveMasterData()">変更を全員（スプレッド）に同期保存</button>
   </div>
 </div>
 
@@ -428,7 +427,6 @@
     }
   }
 
-  /* 会場選択タブ制御 */
   let selectedVenue = '神栄会';
   function selectVenue(name, btn) {
     document.querySelectorAll('.venue-btn').forEach(b => b.classList.remove('active'));
@@ -468,7 +466,7 @@
   let gasUrl = localStorage.getItem('fushimidou_gas_url') || '';
 
   function getRateColor(rate, minRate, maxRate) {
-    if (maxRate === minRate) return 'linear-gradient(135deg, #1e3a8a, #0f172a)';
+    if (maxRate === minRate) return 'linear-gradient(135deg, #1e293b, #0f172a)';
     const ratio = Math.min(Math.max((rate - minRate) / (maxRate - minRate), 0), 1);
     const hue = Math.round((1 - ratio) * 220); 
     return `linear-gradient(145deg, hsl(${hue}, 65%, 28%) 0%, hsl(${hue}, 70%, 14%) 100%)`;
@@ -579,7 +577,6 @@
     const lotEstimate = parseFloat(lotEstimateInput) || 0;
     const weight = parseFloat(document.getElementById('weight').value) || 0;
 
-    // 比率計算
     if (lotEstimate > 0 && buyPrice > 0) {
       const ratio = buyPrice / lotEstimate;
       document.getElementById('lotRatioBadge').textContent = (ratio * 100).toFixed(1) + '%';
@@ -652,6 +649,26 @@
     t.textContent = msg;
     t.style.display = 'block';
     setTimeout(() => { t.style.display = 'none'; }, 2000);
+  }
+
+  /* クラウド同期（スプレッドシートからの品目マスタ自動読み込み） */
+  function syncMasterFromSheet(isManual = false) {
+    if (!gasUrl) return;
+    fetch(gasUrl)
+      .then(res => res.json())
+      .then(res => {
+        if (res.status === 'success' && res.items && res.items.length > 0) {
+          items = res.items;
+          localStorage.setItem('app_master_items', JSON.stringify(items));
+          selectedItem = items[0];
+          renderGrid();
+          calculate();
+          if (isManual) showToast('最新マスタを取得しました');
+        }
+      })
+      .catch(err => {
+        if (isManual) alert('取得エラー: ' + err);
+      });
   }
 
   /* テンキー相互変換 */
@@ -769,16 +786,31 @@
       }
     }
 
+    // 1. ローカル保存
     items = newItems;
     localStorage.setItem('app_master_items', JSON.stringify(items));
     selectedItem = items[0];
     renderGrid();
     calculate();
+
+    // 2. クラウド（スプレッドシート）へ全端末共有同期
+    if (gasUrl) {
+      fetch(gasUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: "updateMaster", items: newItems })
+      }).then(() => {
+        showToast('全端末共通マスタを更新しました');
+      });
+    }
+
     closeMasterModal();
-    showToast('設定を保存しました');
   }
 
+  // 起動時処理
   renderGrid();
+  syncMasterFromSheet(false);
 </script>
 </body>
 </html>
