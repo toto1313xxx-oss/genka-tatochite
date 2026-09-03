@@ -181,7 +181,7 @@
     .key-btn.fn { background: #7f1d1d; border-color: #b91c1c; color: #ffffff; }
     .key-btn.accent { background: linear-gradient(180deg, #92661d, #d4af37); color: #000; font-weight: 900; }
 
-    /* マスタ編集リスト（ドラッグ＆スライド用スタイル追加） */
+    /* マスタ編集リスト（ドラッグ＆スライド用スタイル） */
     .master-row {
       display: grid;
       grid-template-columns: 28px 1fr 85px 36px;
@@ -201,14 +201,13 @@
       font-size: 18px;
       color: #71717a;
       cursor: grab;
-      touch-action: none; /* スマホ操作での画面スクロール競合を防止 */
+      touch-action: none;
       user-select: none;
     }
     .drag-handle:active {
       cursor: grabbing;
       color: var(--gold-text);
     }
-    /* ドラッグ中の要素の外観 */
     .sortable-ghost {
       opacity: 0.35;
       background: #27272a !important;
@@ -416,10 +415,10 @@
     
     <!-- ① 連携・パスコード設定ブロック -->
     <div style="background:#0a0b0e; border:1px solid #3f3f46; border-radius:10px; padding:12px; margin-bottom:14px;">
-      <div class="setting-title">📊 スプレッドシート連携（新規端末はここから同期）</div>
+      <div class="setting-title">📊 スプレッドシート連携（組み込み済み）</div>
       <div class="url-input-row">
-        <input type="text" id="inputGasUrl" placeholder="GAS WebアプリURLを貼り付け" style="flex:1; background:#181920; border:1px solid #52525b; color:#38bdf8; padding:8px; border-radius:6px; font-size:12px;">
-        <button class="btn-connect-gas" onclick="connectAndPullMaster()">接続 & 取得</button>
+        <input type="text" id="inputGasUrl" placeholder="GAS WebアプリURL" style="flex:1; background:#181920; border:1px solid #52525b; color:#38bdf8; padding:8px; border-radius:6px; font-size:12px;">
+        <button class="btn-connect-gas" onclick="connectAndPullMaster()">再取得</button>
       </div>
 
       <div style="margin-top:10px;">
@@ -438,7 +437,6 @@
     <div id="masterList"></div>
     <button class="btn-add-item" onclick="addNewMasterRow()">＋ 新しい品目を追加</button>
     
-    <!-- 明示的にクラウドマスタを上書きするボタン -->
     <button class="btn-save-master" onclick="saveMasterDataSafe()">品目変更をスプレッドシートへ同期更新</button>
   </div>
 </div>
@@ -515,9 +513,12 @@
     { name: 'コツネリ', rate: 3 }
   ];
 
+  // 組み込み済みGAS URL
+  const HARDCODED_GAS_URL = "https://script.google.com/macros/s/AKfycbyRi5dBdk7ip0FoPMP47Nv74Mt_WQvi1_hfRv6E0-WD5WkhgpBH5nO1CMMc5pzly7EKtA/exec";
+  let gasUrl = localStorage.getItem('fushimidou_gas_url') || HARDCODED_GAS_URL;
+
   let items = JSON.parse(localStorage.getItem('app_master_items')) || defaultItems;
   let selectedItem = items[0] || { name: '', rate: 0 };
-  let gasUrl = localStorage.getItem('fushimidou_gas_url') || '';
 
   function getRateColor(rate, minRate, maxRate) {
     if (maxRate === minRate) return 'linear-gradient(135deg, #1e293b, #0f172a)';
@@ -705,7 +706,7 @@
     setTimeout(() => { t.style.display = 'none'; }, 2000);
   }
 
-  /* 新規端末用：URLに接続してマスタを安全吸い上げ */
+  /* URL接続・マスタ取得 */
   function connectAndPullMaster() {
     const url = document.getElementById('inputGasUrl').value.trim();
     if (!url) {
@@ -761,11 +762,10 @@
     document.getElementById('inputNewPasscode').value = '';
     document.getElementById('masterModal').style.display = 'block';
 
-    // タップ＆スライド並び替えの有効化
     const list = document.getElementById('masterList');
     if (sortableInstance) sortableInstance.destroy();
     sortableInstance = new Sortable(list, {
-      handle: '.drag-handle', // つまみアイコン(☰)のみ掴める
+      handle: '.drag-handle',
       animation: 150,
       ghostClass: 'sortable-ghost',
       chosenClass: 'sortable-chosen',
@@ -840,7 +840,6 @@
     items = newItems;
     localStorage.setItem('app_master_items', JSON.stringify(items));
     
-    // 選択中アイテムが存在しなくなった場合は先頭を選択
     if (!items.some(i => i.name === selectedItem.name)) {
       selectedItem = items[0];
     }
