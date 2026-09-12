@@ -176,10 +176,24 @@
     .conv-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
     .tab-btn { background: #0a0b0e; border: 1px solid #3f3f46; color: #a1a1aa; padding: 8px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; text-align: center; }
     .tab-btn.active { background: linear-gradient(135deg, #92661d, #d4af37); color: #000; border-color: #fef08a; font-weight: 900; }
+    
     .conv-display { background: #0a0b0e; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
-    .conv-disp-top { font-size: 11px; color: #a1a1aa; margin-bottom: 2px; }
+    .conv-disp-top { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #a1a1aa; margin-bottom: 2px; }
+    
+    /* 5%加算トグルボタン */
+    .btn-tax-toggle {
+      background: #27272a; border: 1px solid #52525b; color: #a1a1aa; padding: 2px 8px;
+      border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.15s ease;
+    }
+    .btn-tax-toggle.active {
+      background: #b8860b; border-color: #fef08a; color: #0c0d10; font-weight: 900;
+      box-shadow: 0 0 8px rgba(234, 179, 8, 0.5);
+    }
+
     .conv-disp-val { font-size: 24px; font-weight: bold; color: #f8fafc; text-align: right; min-height: 32px; word-break: break-all; }
+    .conv-disp-subval { font-size: 12px; color: #e5c158; text-align: right; min-height: 16px; margin-top: 2px; }
     .conv-disp-res { font-family: 'Shippori Mincho', serif; font-size: 30px; font-weight: 900; color: #fef08a; text-align: right; min-height: 40px; border-top: 1px dashed rgba(212, 175, 55, 0.3); margin-top: 6px; padding-top: 4px; }
+    
     .keypad-grid-3col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
     .key-btn { background: linear-gradient(180deg, #272a34 0%, #181920 100%); border: 1px solid #3f3f46; color: #f8fafc; padding: 12px 0; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; text-align: center; }
     .key-btn:active { background: #3f3f46; transform: scale(0.96); }
@@ -277,7 +291,6 @@
         伏見堂
         <span class="sub-title">原価符牒</span>
       </div>
-      <!-- 何時間前に同期されたかを表示（タップで即時再取得） -->
       <span class="sync-status-badge" id="syncStatusBadge" onclick="syncMasterFromSheetSilently(true)" title="タップして手動再取得">同期: 確認中...</span>
     </div>
     <div class="header-actions">
@@ -371,8 +384,12 @@
     </div>
 
     <div class="conv-display">
-      <div class="conv-disp-top" id="dispLabel">入力した価格（円）</div>
+      <div class="conv-disp-top">
+        <span id="dispLabel">入力した価格（円）</span>
+        <button type="button" class="btn-tax-toggle" id="btnTax5" onclick="togglePlus5Percent()">+5% 加算</button>
+      </div>
       <div class="conv-disp-val" id="dispInput">0</div>
+      <div class="conv-disp-subval" id="dispSubVal"></div>
       <div class="conv-disp-res" id="dispOutput">----</div>
     </div>
 
@@ -551,7 +568,7 @@
       badge.textContent = lastSync ? `同期: ${formatTimeAgo(Number(lastSync))}` : `同期: 未`;
     }
   }
-  setInterval(updateSyncDisplay, 60000); // 1分ごとに経過時間を更新
+  setInterval(updateSyncDisplay, 60000);
 
   function getRateColor(rate, minRate, maxRate) {
     if (maxRate === minRate) return 'linear-gradient(135deg, #1e293b, #0f172a)';
@@ -586,9 +603,17 @@
   const revMap = { 'ヒ':'1', 'コ':'2', 'ト':'3', 'ニ':'4', 'サ':'5', 'カ':'6', 'エ':'7', 'ル':'8', 'ウ':'9', 'チ':'0' };
   const prefixDigitLen = { 'テ': 7, 'チ': 6, 'ト': 5, 'タ': 4 };
 
+  /* 4文字以上は繰り上げ（切り上げ）する符牒変換 */
   function getCipher(priceYen) {
     if (!priceYen || priceYen < 1000) return "----";
-    const num = Math.floor(priceYen);
+    let num = Math.floor(priceYen);
+
+    // 最大有効数字3桁（頭文字含めて最大4文字）を超える端数は繰り上げ
+    let s = String(num);
+    if (s.length > 3) {
+      const unit = Math.pow(10, s.length - 3);
+      num = Math.ceil(num / unit) * unit;
+    }
 
     let prefix = "";
     if (num >= 1000000) prefix = "テ";
@@ -599,6 +624,7 @@
     const digits = String(num);
     const trimmed = digits.replace(/0+$/, '');
 
+    // 1000や20000などの単一数字の場合は末尾に「オ」
     if (trimmed.length === 1 && digits.length >= 4) {
       return (prefix + map[trimmed] + "オ").slice(0, 4);
     }
@@ -757,7 +783,7 @@
           localStorage.setItem('fushimidou_gas_url', gasUrl);
           items = res.items;
           localStorage.setItem('app_master_items', JSON.stringify(items));
-          localStorage.setItem('fushimidou_last_sync', Date.now()); // 同期時間更新
+          localStorage.setItem('fushimidou_last_sync', Date.now());
           
           if (!items.some(i => i.name === selectedItem.name)) {
             selectedItem = items[0];
@@ -793,7 +819,7 @@
         if (res.status === 'success' && res.items && res.items.length > 0) {
           items = res.items;
           localStorage.setItem('app_master_items', JSON.stringify(items));
-          localStorage.setItem('fushimidou_last_sync', Date.now()); // タイムスタンプ保存
+          localStorage.setItem('fushimidou_last_sync', Date.now());
 
           if (!items.some(i => i.name === selectedItem.name)) {
             selectedItem = items[0];
@@ -802,7 +828,6 @@
           renderGrid();
           calculate();
 
-          // 画面に「同期完了 ✓」を一瞬表示
           if (badge) {
             badge.textContent = '同期完了 ✓';
             badge.style.color = '#38bdf8';
@@ -931,6 +956,7 @@
   /* テンキー相互変換 */
   let currentConvMode = 'priceToCipher';
   let curInputStr = '';
+  let isPlus5Percent = false;
 
   function openConvModal() {
     document.getElementById('convModal').style.display = 'block';
@@ -946,23 +972,65 @@
     const keypadPrice = document.getElementById('keypadPrice');
     const keypadCipher = document.getElementById('keypadCipher');
     const dispLabel = document.getElementById('dispLabel');
+    const btnTax5 = document.getElementById('btnTax5');
+    const dispSubVal = document.getElementById('dispSubVal');
 
     if (mode === 'priceToCipher') {
       tabPrice.classList.add('active');
       tabCipher.classList.remove('active');
       keypadPrice.style.display = 'grid';
       keypadCipher.style.display = 'none';
+      btnTax5.style.display = 'inline-block';
       dispLabel.textContent = '入力した価格（円）';
       document.getElementById('dispInput').textContent = '0';
+      dispSubVal.textContent = '';
       document.getElementById('dispOutput').textContent = '----';
     } else {
       tabCipher.classList.add('active');
       tabPrice.classList.remove('active');
       keypadPrice.style.display = 'none';
       keypadCipher.style.display = 'flex';
+      btnTax5.style.display = 'none';
       dispLabel.textContent = '入力した符牒コード';
       document.getElementById('dispInput').textContent = '未入力';
+      dispSubVal.textContent = '';
       document.getElementById('dispOutput').textContent = '---- 円';
+    }
+  }
+
+  function togglePlus5Percent() {
+    isPlus5Percent = !isPlus5Percent;
+    const btn = document.getElementById('btnTax5');
+    if (isPlus5Percent) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+    updatePriceConvDisplay();
+  }
+
+  function updatePriceConvDisplay() {
+    const dispInput = document.getElementById('dispInput');
+    const dispSubVal = document.getElementById('dispSubVal');
+    const dispOutput = document.getElementById('dispOutput');
+
+    if (!curInputStr) {
+      dispInput.textContent = '0';
+      dispSubVal.textContent = '';
+      dispOutput.textContent = '----';
+      return;
+    }
+
+    const baseVal = Number(curInputStr);
+    dispInput.textContent = baseVal.toLocaleString() + ' 円';
+
+    if (isPlus5Percent) {
+      const addedVal = Math.round(baseVal * 1.05);
+      dispSubVal.textContent = `(+5%: ${addedVal.toLocaleString()} 円)`;
+      dispOutput.textContent = getCipher(addedVal);
+    } else {
+      dispSubVal.textContent = '';
+      dispOutput.textContent = getCipher(baseVal);
     }
   }
 
@@ -970,24 +1038,24 @@
     if (curInputStr.length >= 8) return;
     if (curInputStr === '' && (digit === '0' || digit === '00')) return;
     curInputStr += digit;
-    document.getElementById('dispInput').textContent = Number(curInputStr).toLocaleString() + ' 円';
-    document.getElementById('dispOutput').textContent = getCipher(Number(curInputStr));
+    updatePriceConvDisplay();
   }
 
   function pressCipher(char) {
     if (curInputStr.length >= 4) return;
     curInputStr += char;
     document.getElementById('dispInput').textContent = curInputStr;
+    document.getElementById('dispSubVal').textContent = '';
     document.getElementById('dispOutput').textContent = decodeCipher(curInputStr);
   }
 
   function pressClear() {
     curInputStr = '';
     if (currentConvMode === 'priceToCipher') {
-      document.getElementById('dispInput').textContent = '0';
-      document.getElementById('dispOutput').textContent = '----';
+      updatePriceConvDisplay();
     } else {
       document.getElementById('dispInput').textContent = '未入力';
+      document.getElementById('dispSubVal').textContent = '';
       document.getElementById('dispOutput').textContent = '---- 円';
     }
   }
