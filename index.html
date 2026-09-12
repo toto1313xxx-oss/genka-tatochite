@@ -603,12 +603,12 @@
   const revMap = { 'ヒ':'1', 'コ':'2', 'ト':'3', 'ニ':'4', 'サ':'5', 'カ':'6', 'エ':'7', 'ル':'8', 'ウ':'9', 'チ':'0' };
   const prefixDigitLen = { 'テ': 7, 'チ': 6, 'ト': 5, 'タ': 4 };
 
-  /* 4文字以上は繰り上げ（切り上げ）する符牒変換 */
+  /* 符牒生成（4文字以上繰り上げ ＆ キリ番はチ、連続はオ） */
   function getCipher(priceYen) {
     if (!priceYen || priceYen < 1000) return "----";
     let num = Math.floor(priceYen);
 
-    // 最大有効数字3桁（頭文字含めて最大4文字）を超える端数は繰り上げ
+    // 最大有効数字3桁（接頭辞含め最大4文字）を超える端数は繰り上げ
     let s = String(num);
     if (s.length > 3) {
       const unit = Math.pow(10, s.length - 3);
@@ -621,32 +621,24 @@
     else if (num >= 10000) prefix = "ト";
     else if (num >= 1000) prefix = "タ";
 
-    const digits = String(num);
-    const trimmed = digits.replace(/0+$/, '');
-
-    // 1000や20000などの単一数字の場合は末尾に「オ」
-    if (trimmed.length === 1 && digits.length >= 4) {
-      return (prefix + map[trimmed] + "オ").slice(0, 4);
+    // 2桁目以降がすべて0のキリ番（例: 6000 -> タカチ、60000 -> トカチ）
+    const fullDigits = String(num);
+    const remainder = fullDigits.slice(1);
+    if (/^0+$/.test(remainder)) {
+      return prefix + map[fullDigits[0]] + "チ";
     }
 
-    let res = [];
-    let i = 0;
-    while (i < trimmed.length) {
-      let ch = trimmed[i];
-      let count = 1;
-      while (i + 1 < trimmed.length && trimmed[i + 1] === ch) {
-        count++;
-        i++;
-      }
-      if (count >= 2) {
-        res.push(map[ch]);
+    // 数値部分の変換（連続数字のみ「オ」）
+    let res = [map[fullDigits[0]]];
+    for (let i = 1; i < fullDigits.length; i++) {
+      if (fullDigits[i] === fullDigits[i - 1]) {
         res.push("オ");
-        break;
       } else {
-        res.push(map[ch]);
+        res.push(map[fullDigits[i]]);
       }
-      i++;
       if (res.length >= 3) break;
+      // 以降がすべて0なら終了
+      if (/^0+$/.test(fullDigits.slice(i + 1))) break;
     }
 
     return (prefix + res.join("")).slice(0, 4);
@@ -661,6 +653,7 @@
     const targetLen = prefixDigitLen[first];
     const body = s.slice(1);
 
+    // 接頭辞 + 1文字 + オ の形式（例: トヒオ -> 10000）
     if (body.length === 2 && body[1] === 'オ' && revMap[body[0]]) {
       const numStr = revMap[body[0]].padEnd(targetLen, '0');
       return Number(numStr).toLocaleString() + " 円";
