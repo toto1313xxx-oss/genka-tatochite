@@ -603,7 +603,7 @@
   const revMap = { 'ヒ':'1', 'コ':'2', 'ト':'3', 'ニ':'4', 'サ':'5', 'カ':'6', 'エ':'7', 'ル':'8', 'ウ':'9', 'チ':'0' };
   const prefixDigitLen = { 'テ': 7, 'チ': 6, 'ト': 5, 'タ': 4 };
 
-  /* 符牒生成（4文字以上繰り上げ ＆ キリ番はチ、連続はオ） */
+  /* 符牒生成（4文字以上繰り上げ、キリ番はチ、連続は単一のオ） */
   function getCipher(priceYen) {
     if (!priceYen || priceYen < 1000) return "----";
     let num = Math.floor(priceYen);
@@ -628,11 +628,13 @@
       return prefix + map[fullDigits[0]] + "チ";
     }
 
-    // 数値部分の変換（連続数字のみ「オ」）
+    // 数値部分の変換（連続数字のみ「オ」。オの重複は防止）
     let res = [map[fullDigits[0]]];
     for (let i = 1; i < fullDigits.length; i++) {
       if (fullDigits[i] === fullDigits[i - 1]) {
-        res.push("オ");
+        if (res[res.length - 1] !== "オ") {
+          res.push("オ");
+        }
       } else {
         res.push(map[fullDigits[i]]);
       }
@@ -653,9 +655,9 @@
     const targetLen = prefixDigitLen[first];
     const body = s.slice(1);
 
-    // 接頭辞 + 1文字 + オ の形式（例: トヒオ -> 10000）
+    // 接頭辞 + 1文字 + オ の形式（例: トヒオ -> 10000、タサオ -> 5500/5550等）
     if (body.length === 2 && body[1] === 'オ' && revMap[body[0]]) {
-      const numStr = revMap[body[0]].padEnd(targetLen, '0');
+      const numStr = revMap[body[0]].repeat(targetLen);
       return Number(numStr).toLocaleString() + " 円";
     }
 
