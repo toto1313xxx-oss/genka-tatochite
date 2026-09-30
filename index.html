@@ -180,10 +180,11 @@
     .conv-display { background: #0a0b0e; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
     .conv-disp-top { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #a1a1aa; margin-bottom: 2px; }
     
-    /* 5%加算トグルボタン */
+    /* 加算トグルボタングループ */
+    .tax-toggle-group { display: flex; gap: 4px; }
     .btn-tax-toggle {
-      background: #27272a; border: 1px solid #52525b; color: #a1a1aa; padding: 2px 8px;
-      border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.15s ease;
+      background: #27272a; border: 1px solid #52525b; color: #a1a1aa; padding: 2px 7px;
+      border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; transition: all 0.15s ease;
     }
     .btn-tax-toggle.active {
       background: #b8860b; border-color: #fef08a; color: #0c0d10; font-weight: 900;
@@ -386,7 +387,12 @@
     <div class="conv-display">
       <div class="conv-disp-top">
         <span id="dispLabel">入力した価格（円）</span>
-        <button type="button" class="btn-tax-toggle" id="btnTax5" onclick="togglePlus5Percent()">+5% 加算</button>
+        <!-- 加算切り替え（5%, 5.5%, 11%） -->
+        <div class="tax-toggle-group" id="taxToggleGroup">
+          <button type="button" class="btn-tax-toggle" id="btnTax5" onclick="setExtraPercent(0.05, this)">+5%</button>
+          <button type="button" class="btn-tax-toggle" id="btnTax55" onclick="setExtraPercent(0.055, this)">+5.5%</button>
+          <button type="button" class="btn-tax-toggle" id="btnTax11" onclick="setExtraPercent(0.11, this)">+11%</button>
+        </div>
       </div>
       <div class="conv-disp-val" id="dispInput">0</div>
       <div class="conv-disp-subval" id="dispSubVal"></div>
@@ -665,7 +671,7 @@
     const targetLen = prefixDigitLen[first];
     const body = s.slice(1);
 
-    // 接頭辞 + 1文字 + オ の形式（例: トヒオ -> 10000、タサオ -> 5555等）
+    // 接頭辞 + 1文字 + オ の形式（例: トヒオ -> 10000）
     if (body.length === 2 && body[1] === 'オ' && revMap[body[0]]) {
       const numStr = revMap[body[0]].repeat(targetLen);
       return Number(numStr).toLocaleString() + " 円";
@@ -961,7 +967,7 @@
   /* テンキー相互変換 */
   let currentConvMode = 'priceToCipher';
   let curInputStr = '';
-  let isPlus5Percent = false;
+  let activeExtraRate = 0; // 0, 0.05, 0.055, 0.11
 
   function openConvModal() {
     document.getElementById('convModal').style.display = 'block';
@@ -977,7 +983,7 @@
     const keypadPrice = document.getElementById('keypadPrice');
     const keypadCipher = document.getElementById('keypadCipher');
     const dispLabel = document.getElementById('dispLabel');
-    const btnTax5 = document.getElementById('btnTax5');
+    const taxToggleGroup = document.getElementById('taxToggleGroup');
     const dispSubVal = document.getElementById('dispSubVal');
 
     if (mode === 'priceToCipher') {
@@ -985,7 +991,7 @@
       tabCipher.classList.remove('active');
       keypadPrice.style.display = 'grid';
       keypadCipher.style.display = 'none';
-      btnTax5.style.display = 'inline-block';
+      taxToggleGroup.style.display = 'flex';
       dispLabel.textContent = '入力した価格（円）';
       document.getElementById('dispInput').textContent = '0';
       dispSubVal.textContent = '';
@@ -995,7 +1001,7 @@
       tabPrice.classList.remove('active');
       keypadPrice.style.display = 'none';
       keypadCipher.style.display = 'flex';
-      btnTax5.style.display = 'none';
+      taxToggleGroup.style.display = 'none';
       dispLabel.textContent = '入力した符牒コード';
       document.getElementById('dispInput').textContent = '未入力';
       dispSubVal.textContent = '';
@@ -1003,13 +1009,15 @@
     }
   }
 
-  function togglePlus5Percent() {
-    isPlus5Percent = !isPlus5Percent;
-    const btn = document.getElementById('btnTax5');
-    if (isPlus5Percent) {
-      btn.classList.add('active');
-    } else {
+  /* 加算切り替え（同一ボタンを押すと解除） */
+  function setExtraPercent(rate, btn) {
+    if (activeExtraRate === rate) {
+      activeExtraRate = 0;
       btn.classList.remove('active');
+    } else {
+      activeExtraRate = rate;
+      document.querySelectorAll('.btn-tax-toggle').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
     }
     updatePriceConvDisplay();
   }
@@ -1029,9 +1037,10 @@
     const baseVal = Number(curInputStr);
     dispInput.textContent = baseVal.toLocaleString() + ' 円';
 
-    if (isPlus5Percent) {
-      const addedVal = Math.round(baseVal * 1.05);
-      dispSubVal.textContent = `(+5%: ${addedVal.toLocaleString()} 円)`;
+    if (activeExtraRate > 0) {
+      const addedVal = Math.round(baseVal * (1 + activeExtraRate));
+      const rateLabel = (activeExtraRate === 0.055) ? '5.5%' : (activeExtraRate * 100) + '%';
+      dispSubVal.textContent = `(+${rateLabel}: ${addedVal.toLocaleString()} 円)`;
       dispOutput.textContent = getCipher(addedVal);
     } else {
       dispSubVal.textContent = '';
