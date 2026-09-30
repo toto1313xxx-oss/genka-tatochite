@@ -609,16 +609,20 @@
   const revMap = { 'ヒ':'1', 'コ':'2', 'ト':'3', 'ニ':'4', 'サ':'5', 'カ':'6', 'エ':'7', 'ル':'8', 'ウ':'9', 'チ':'0' };
   const prefixDigitLen = { 'テ': 7, 'チ': 6, 'ト': 5, 'タ': 4 };
 
-  /* 符牒生成（有効数字端数繰り上げ、キリ番・末尾0はチ、連続はオ） */
+  /* 符牒生成（千円台は100円未満、万台は千円未満、10万台は1万円未満切り上げ） */
   function getCipher(priceYen) {
     if (!priceYen || priceYen < 1000) return "----";
     let num = Math.floor(priceYen);
 
-    // 最大有効数字3桁（接頭辞含め最大4文字）を超える端数は繰り上げ
-    let s = String(num);
-    if (s.length > 3) {
-      const unit = Math.pow(10, s.length - 3);
-      num = Math.ceil(num / unit) * unit;
+    // 金額規模に応じた切り上げ単位
+    if (num >= 1000000) {
+      num = Math.ceil(num / 100000) * 100000; // 100万円以上は10万円単位
+    } else if (num >= 100000) {
+      num = Math.ceil(num / 10000) * 10000;   // 10万円台は1万円単位（例: 126,600 -> 130,000）
+    } else if (num >= 10000) {
+      num = Math.ceil(num / 1000) * 1000;     // 1万円台は千円単位（例: 12,660 -> 13,000）
+    } else if (num >= 1000) {
+      num = Math.ceil(num / 100) * 100;       // 千円台は100円単位（例: 5,275 -> 5,300）
     }
 
     let prefix = "";
@@ -629,32 +633,24 @@
 
     const fullDigits = String(num);
 
-    // 数値部分の変換（連続数字は「オ」）
+    // 数値部分の変換（連続数字は「オ」、キリ番・末尾0は「チ」）
     let res = [map[fullDigits[0]]];
     for (let i = 1; i < fullDigits.length; i++) {
-      // 残りの桁がすべて0（キリ番）の場合は末尾に「チ」を添えて終了（例: 6000 -> タカチ）
       if (/^0+$/.test(fullDigits.slice(i))) {
-        if (res.length < 3) {
-          res.push("チ");
-        }
+        if (res.length < 3) res.push("チ");
         break;
       }
 
       if (fullDigits[i] === fullDigits[i - 1]) {
-        if (res[res.length - 1] !== "オ") {
-          res.push("オ");
-        }
+        if (res[res.length - 1] !== "オ") res.push("オ");
       } else {
         res.push(map[fullDigits[i]]);
       }
 
       if (res.length >= 3) break;
 
-      // この桁以降がすべて0なら末尾に「チ」を添えて終了（例: 5600 -> タサカチ）
       if (/^0+$/.test(fullDigits.slice(i + 1))) {
-        if (res.length < 3) {
-          res.push("チ");
-        }
+        if (res.length < 3) res.push("チ");
         break;
       }
     }
