@@ -147,6 +147,13 @@
       filter: drop-shadow(0 0 12px rgba(252, 246, 186, 0.4)); min-height: 54px; line-height: 54px;
     }
 
+    /* 符牒の下の小さな付箋。ロットIDは任意発行 */
+    .lot-id-note { width:100%; margin-top:10px; padding:10px 12px; background:#f4e4a4; color:#3b3118; border-radius:5px; border-left:4px solid #c7a13a; text-align:left; box-shadow:2px 3px 7px rgba(0,0,0,.2); }
+    .lot-id-heading { font-size:12px; font-weight:900; }
+    .lot-id-value { font-size:14px; font-weight:800; margin-top:4px; overflow-wrap:anywhere; }
+    .lot-id-memo { font-size:12px; margin-top:4px; white-space:pre-wrap; overflow-wrap:anywhere; }
+    .lot-id-button { margin-top:8px; border:1px solid #947327; border-radius:7px; background:#fff7d8; color:#3b3118; padding:9px 12px; font-size:13px; font-weight:800; cursor:pointer; width:100%; }
+
     /* アクションボタン */
     .action-row { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 8px; }
     .btn-save-row {
@@ -360,6 +367,13 @@
     </div>
     <div class="cipher-label">確定原価 符牒</div>
     <div class="cipher-badge" id="cipherCode">----</div>
+    <!-- 任意: 山の名前と仕入日からロットIDを発行。原価計算は従来どおり -->
+    <div class="lot-id-note">
+      <div class="lot-id-heading">📝 ロットID・付箋メモ</div>
+      <div id="issuedLotId" class="lot-id-value">未発行</div>
+      <div id="issuedLotMemo" class="lot-id-memo">メモなし</div>
+      <button type="button" class="lot-id-button" onclick="issueLotId()">ID発行／付箋メモ</button>
+    </div>
   </div>
 
   <!-- 保存 & クリアボタン -->
@@ -691,6 +705,35 @@
 
   let curCalculatedData = null;
 
+  // ロットIDは「仕入日_山の名前」。同一の山は同一IDで扱い、商品単位の連番は作らない。
+  let issuedLot = null;
+  function issueLotId() {
+    const lotName = document.getElementById('lotName').value.trim();
+    if (!lotName) {
+      alert('先に「山の名前（ロット名）」を入力してください。');
+      document.getElementById('lotName').focus();
+      return;
+    }
+    const today = new Date();
+    const localDate = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+    const input = prompt('⚠️ 注意：IDの日付は「計算日」ではなく「仕入日」です。\n仕入日を確認・修正してください（YYYY-MM-DD）。\n同じ日に同じ山の名前を使うとIDが重複します。', issuedLot?.date || localDate);
+    if (input === null) return;
+    const match = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(input.trim());
+    const parsed = match && new Date(input.trim() + 'T12:00:00');
+    if (!parsed || Number(match[1]) !== parsed.getFullYear() || Number(match[2]) !== parsed.getMonth()+1 || Number(match[3]) !== parsed.getDate()) {
+      alert('仕入日を YYYY-MM-DD の形式で正しく入力してください。');
+      return;
+    }
+    const memo = prompt('📝 付箋メモ（任意）\n注意点・特徴などを入力してください。', issuedLot?.memo || '');
+    if (memo === null) return;
+    const id = input.trim().replace(/-/g, '') + '_' + lotName;
+    if (!confirm('この内容でロットIDを発行しますか？\n' + id + '\n※山の名前・仕入日を変更したら再発行してください。')) return;
+    issuedLot = { id, date:input.trim(), name:lotName, memo:memo.trim() };
+    document.getElementById('issuedLotId').textContent = id;
+    document.getElementById('issuedLotMemo').textContent = memo.trim() || 'メモなし';
+    calculate();
+  }
+
   function calculate() {
     const buyPriceInput = document.getElementById('buyPrice').value;
     const lotEstimateInput = document.getElementById('lotEstimate').value;
@@ -727,7 +770,10 @@
       ratioPercent: (ratio > 0) ? (ratio * 100).toFixed(1) + '%' : '0.0%',
       indivEstYen: Math.round(indivEst * 1000),
       actualYen: actualYen,
-      cipher: cipher
+      cipher: cipher,
+      lotId: issuedLot && issuedLot.name === document.getElementById('lotName').value.trim() ? issuedLot.id : '',
+      lotMemo: issuedLot && issuedLot.name === document.getElementById('lotName').value.trim() ? issuedLot.memo : '',
+      purchaseDate: issuedLot && issuedLot.name === document.getElementById('lotName').value.trim() ? issuedLot.date : ''
     };
   }
 
