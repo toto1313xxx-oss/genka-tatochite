@@ -718,7 +718,7 @@
     const localDate = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
     const input = prompt('⚠️ 注意：IDの日付は「計算日」ではなく「仕入日」です。\n仕入日を確認・修正してください（YYYY-MM-DD）。\n同じ日に同じ山の名前を使うとIDが重複します。', issuedLot?.date || localDate);
     if (input === null) return;
-    const match = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(input.trim());
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input.trim());
     const parsed = match && new Date(input.trim() + 'T12:00:00');
     if (!parsed || Number(match[1]) !== parsed.getFullYear() || Number(match[2]) !== parsed.getMonth()+1 || Number(match[3]) !== parsed.getDate()) {
       alert('仕入日を YYYY-MM-DD の形式で正しく入力してください。');
