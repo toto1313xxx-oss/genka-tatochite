@@ -130,7 +130,7 @@
     .item-name { font-size: 14px; font-weight: bold; color: #ffffff; }
     .item-rate { font-size: 11px; color: #fef08a; margin-top: 3px; font-weight: 700; }
 
-    /* 重量入力 */
+    /* 入力カード（重量または個数） */
     .weight-card { background: var(--card-bg); border-radius: 12px; padding: 12px; border: 1px solid rgba(212, 175, 55, 0.3); }
     .weight-box { position: relative; display: flex; align-items: center; }
     .weight-input { width: 100%; background: #0a0b0e; border: 1px solid #52525b; color: #38bdf8; padding: 10px 60px 10px 12px; border-radius: 8px; font-size: 26px; font-weight: bold; text-align: right; }
@@ -186,7 +186,6 @@
     .conv-display { background: #0a0b0e; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
     .conv-disp-top { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #a1a1aa; margin-bottom: 2px; }
     
-    /* 加算トグルボタングループ（4.4%, 5%, 5.5%, 11%） */
     .tax-toggle-group { display: flex; gap: 3px; }
     .btn-tax-toggle {
       background: #27272a; border: 1px solid #52525b; color: #a1a1aa; padding: 2px 5px;
@@ -210,11 +209,11 @@
     .key-btn.fn { background: #7f1d1d; border-color: #b91c1c; color: #ffffff; }
     .key-btn.accent { background: linear-gradient(180deg, #92661d, #d4af37); color: #000; font-weight: 900; }
 
-    /* マスタ編集リスト（ドラッグ＆スライド用） */
+    /* マスタ編集リスト（単位選択付き） */
     .master-row {
       display: grid;
-      grid-template-columns: 28px 1fr 85px 36px;
-      gap: 6px;
+      grid-template-columns: 24px 1.2fr 52px 64px 32px;
+      gap: 5px;
       margin-bottom: 8px;
       align-items: center;
       background: #111216;
@@ -227,7 +226,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
+      font-size: 16px;
       color: #71717a;
       cursor: grab;
       touch-action: none;
@@ -247,12 +246,12 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
     }
 
-    .master-row input { width: 100%; background: #0a0b0e; border: 1px solid #3f3f46; color: #f8fafc; padding: 8px 6px; border-radius: 6px; font-size: 13px; }
+    .master-row input, .master-row select { width: 100%; background: #0a0b0e; border: 1px solid #3f3f46; color: #f8fafc; padding: 7px 4px; border-radius: 6px; font-size: 12px; }
+    .master-row select.unit { color: #38bdf8; font-weight: bold; padding: 7px 2px; }
     .master-row input.rate { text-align: right; color: #fef08a; }
-    .btn-del { width: 100%; height: 35px; background: #7f1d1d; border: 1px solid #b91c1c; color: #fff; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; }
+    .btn-del { width: 100%; height: 33px; background: #7f1d1d; border: 1px solid #b91c1c; color: #fff; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; }
     .btn-add-item { width: 100%; background: #272a34; border: 1px dashed #71717a; color: #e5c158; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-top: 8px; cursor: pointer; }
     
-    /* 設定ブロック */
     .setting-block { margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(212, 175, 55, 0.3); }
     .setting-title { font-size: 12px; font-weight: bold; color: var(--gold-text); margin-bottom: 6px; }
     .url-input-row { display: flex; gap: 6px; align-items: center; }
@@ -350,13 +349,13 @@
     <div class="grid" id="itemGrid"></div>
   </div>
 
-  <!-- 重量入力 -->
+  <!-- 計量 / 数量 入力カード（単位に応じて動的切替） -->
   <div class="weight-card">
-    <div class="section-title">はかり計量値</div>
+    <div class="section-title" id="inputSectionTitle">はかり計量値</div>
     <div class="weight-box">
-      <input type="number" id="weight" class="weight-input" placeholder="0" inputmode="decimal" oninput="calculate()">
-      <span class="unit-text">g</span>
-      <button class="btn-inline-clear" onclick="clearWeightOnly()">✕</button>
+      <input type="number" id="amountInput" class="weight-input" placeholder="0" inputmode="decimal" oninput="calculate()">
+      <span class="unit-text" id="unitTextBadge">g</span>
+      <button class="btn-inline-clear" onclick="clearAmountOnly()">✕</button>
     </div>
   </div>
 
@@ -373,7 +372,7 @@
   <!-- 保存 & クリアボタン -->
   <div class="action-row">
     <button class="btn-save-row" onclick="saveToArchive()">スプレッド保管して次へ</button>
-    <button class="btn-next-only" onclick="clearWeightOnly()">保存せず次へ</button>
+    <button class="btn-next-only" onclick="clearAmountOnly()">保存せず次へ</button>
   </div>
 </div>
 
@@ -395,7 +394,6 @@
     <div class="conv-display">
       <div class="conv-disp-top">
         <span id="dispLabel">入力した価格（円）</span>
-        <!-- 加算切り替え（4.4%, 5%, 5.5%, 11%） -->
         <div class="tax-toggle-group" id="taxToggleGroup">
           <button type="button" class="btn-tax-toggle" id="btnTax44" onclick="setExtraPercent(0.044, this)">+4.4%</button>
           <button type="button" class="btn-tax-toggle" id="btnTax5" onclick="setExtraPercent(0.05, this)">+5%</button>
@@ -473,10 +471,10 @@
       <button type="button" class="btn-update-app" onclick="forceAppUpdate()">🔄 アプリを最新バージョンに強制更新</button>
     </div>
 
-    <!-- ② 品目マスタ編集ブロック -->
+    <!-- ② 品目マスタ編集ブロック（単位選択対応） -->
     <div class="setting-title" style="display:flex; justify-content:space-between; align-items:center;">
-      <span>品目・単価マスタ（全端末共通）</span>
-      <span style="font-size:10px; color:#a1a1aa; font-weight:normal;">☰ を掴んでスライドで並び替え</span>
+      <span>品目・単価マスタ（単位指定可）</span>
+      <span style="font-size:10px; color:#a1a1aa; font-weight:normal;">☰ を掴んで並び替え</span>
     </div>
     <div id="masterList"></div>
     <button class="btn-add-item" onclick="addNewMasterRow()">＋ 新しい品目を追加</button>
@@ -490,17 +488,14 @@
   (function checkPwaUpdate() {
     const lastCheck = sessionStorage.getItem('last_update_check');
     const now = Date.now();
-    // 連続アクセス防止（1分間は再チェックをスキップ）
     if (lastCheck && now - Number(lastCheck) < 60000) return;
     sessionStorage.setItem('last_update_check', now);
 
-    // キャッシュを無視して最新のHTMLを取得
     fetch(window.location.pathname + '?_t=' + now, { cache: 'no-store' })
       .then(response => response.text())
       .then(html => {
         const currentLen = document.documentElement.outerHTML.length;
         const newLen = html.length;
-        // サーバー側のファイルサイズに明らかな差があれば自動再読み込み
         if (Math.abs(currentLen - newLen) > 10) {
           console.log('新バージョン検出: アプリを更新します');
           const cleanUrl = new URL(window.location.href);
@@ -518,7 +513,6 @@
       window.location.replace(targetUrl.toString());
     }
   }
-  // -------------------------------------------------------------
 
   const DEFAULT_PIN = "123456";
   let currentPin = localStorage.getItem('fushimidou_pin') || DEFAULT_PIN;
@@ -580,25 +574,31 @@
     return selectedVenue;
   }
 
+  // デフォルト品目（unit未指定のものはkgとして互換処理）
   const defaultItems = [
-    { name: '象牙バングル大', rate: 250 },
-    { name: '象牙アクセSS', rate: 200 },
-    { name: '象牙バングル小', rate: 200 },
-    { name: 'マッコウ', rate: 150 },
-    { name: '象牙アクセS', rate: 140 },
-    { name: '象牙アクセA', rate: 70 },
-    { name: '象牙アクセB', rate: 45 },
-    { name: 'コツネリ', rate: 3 }
+    { name: '象牙バングル大', rate: 250, unit: 'kg' },
+    { name: '象牙アクセSS', rate: 200, unit: 'kg' },
+    { name: '象牙バングル小', rate: 200, unit: 'kg' },
+    { name: 'マッコウ', rate: 150, unit: 'kg' },
+    { name: '象牙アクセS', rate: 140, unit: 'kg' },
+    { name: '象牙アクセA', rate: 70, unit: 'kg' },
+    { name: '象牙アクセB', rate: 45, unit: 'kg' },
+    { name: 'コツネリ', rate: 3, unit: 'kg' }
   ];
 
-  // 組み込み済みGAS URL
   const HARDCODED_GAS_URL = "https://script.google.com/macros/s/AKfycbyRi5dBdk7ip0FoPMP47Nv74Mt_WQvi1_hfRv6E0-WD5WkhgpBH5nO1CMMc5pzly7EKtA/exec";
   let gasUrl = localStorage.getItem('fushimidou_gas_url') || HARDCODED_GAS_URL;
 
-  let items = JSON.parse(localStorage.getItem('app_master_items')) || defaultItems;
-  let selectedItem = items[0] || { name: '', rate: 0 };
+  let rawItems = JSON.parse(localStorage.getItem('app_master_items')) || defaultItems;
+  // 既存データ互換: unitがないものはkgに統一
+  let items = rawItems.map(item => ({
+    name: item.name,
+    rate: Number(item.rate),
+    unit: (item.unit === 'pcs' || item.unit === '個') ? 'pcs' : 'kg'
+  }));
 
-  /* 同期時間フォーマット */
+  let selectedItem = items[0] || { name: '', rate: 0, unit: 'kg' };
+
   function formatTimeAgo(timestamp) {
     if (!timestamp) return '未同期';
     const diffSec = Math.floor((Date.now() - timestamp) / 1000);
@@ -627,6 +627,13 @@
     return `linear-gradient(145deg, hsl(${hue}, 65%, 28%) 0%, hsl(${hue}, 70%, 14%) 100%)`;
   }
 
+  /* 選択品目の単位に応じて入力欄のラベルと単位表記を切り替える */
+  function updateInputSectionUI() {
+    const isPcs = (selectedItem.unit === 'pcs');
+    document.getElementById('inputSectionTitle').textContent = isPcs ? '数量入力' : 'はかり計量値';
+    document.getElementById('unitTextBadge').textContent = isPcs ? '個' : 'g';
+  }
+
   function renderGrid() {
     const grid = document.getElementById('itemGrid');
     grid.innerHTML = '';
@@ -638,22 +645,27 @@
       const btn = document.createElement('button');
       btn.className = `item-btn ${item.name === selectedItem.name ? 'active' : ''}`;
       btn.style.background = getRateColor(item.rate, minRate, maxRate);
-      btn.innerHTML = `<div class="item-name">${item.name}</div><div class="item-rate">${item.rate} 千円/kg</div>`;
+      
+      const unitLabel = (item.unit === 'pcs') ? '千円/個' : '千円/kg';
+      btn.innerHTML = `<div class="item-name">${item.name}</div><div class="item-rate">${item.rate} ${unitLabel}</div>`;
+      
       btn.onclick = () => {
         document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         selectedItem = item;
+        updateInputSectionUI();
         calculate();
       };
       grid.appendChild(btn);
     });
+
+    updateInputSectionUI();
   }
 
   const map = { '1':'ヒ', '2':'コ', '3':'ト', '4':'ニ', '5':'サ', '6':'カ', '7':'エ', '8':'ル', '9':'ウ', '0':'チ' };
   const revMap = { 'ヒ':'1', 'コ':'2', 'ト':'3', 'ニ':'4', 'サ':'5', 'カ':'6', 'エ':'7', 'ル':'8', 'ウ':'9', 'チ':'0' };
   const prefixDigitLen = { 'テ': 7, 'チ': 6, 'ト': 5, 'タ': 4 };
 
-  /* 数値から符牒文字列を素直に生成する基本関数（末尾0処理・オ連続処理を含む） */
   function buildRawCipher(val) {
     const num = Math.floor(val);
     let prefix = "";
@@ -688,7 +700,6 @@
     return prefix + res.join("");
   }
 
-  /* 符牒生成メインロジック（仕様維持） */
   function getCipher(priceYen) {
     if (!priceYen || priceYen < 1000) return "----";
     let num = Math.floor(priceYen);
@@ -714,7 +725,6 @@
     return code;
   }
 
-  /* 符牒から価格へ復号 */
   function decodeCipher(cipherStr) {
     const s = cipherStr.trim();
     if (!s) return "----";
@@ -752,7 +762,7 @@
     const lotEstimateInput = document.getElementById('lotEstimate').value;
     const buyPrice = parseFloat(buyPriceInput) || 0;
     const lotEstimate = parseFloat(lotEstimateInput) || 0;
-    const weight = parseFloat(document.getElementById('weight').value) || 0;
+    const amountVal = parseFloat(document.getElementById('amountInput').value) || 0;
 
     if (lotEstimate > 0 && buyPrice > 0) {
       const ratio = buyPrice / lotEstimate;
@@ -762,7 +772,11 @@
     }
 
     const ratio = (lotEstimate > 0) ? (buyPrice / lotEstimate) : 0;
-    const indivEst = selectedItem.rate * (weight / 1000);
+    
+    // 単位判定: pcs（個）ならそのまま乗算、kgならg単位入力を1000で割ってkg換算
+    const isPcs = (selectedItem.unit === 'pcs');
+    const indivEst = isPcs ? (selectedItem.rate * amountVal) : (selectedItem.rate * (amountVal / 1000));
+    
     const cost = indivEst * ratio;
     const actualYen = Math.round(cost * 1000);
     const cipher = getCipher(actualYen);
@@ -777,7 +791,8 @@
       auction: getActiveVenueName(),
       lotName: document.getElementById('lotName').value.trim() || '未設定',
       itemName: selectedItem.name,
-      weight: weight,
+      unitType: isPcs ? '個' : 'kg',
+      amount: amountVal,
       buyPriceYen: Math.round(buyPrice * 1000),
       lotEstimateYen: Math.round(lotEstimate * 1000),
       ratioPercent: (ratio > 0) ? (ratio * 100).toFixed(1) + '%' : '0.0%',
@@ -787,17 +802,17 @@
     };
   }
 
-  function clearWeightOnly() {
-    const input = document.getElementById('weight');
+  function clearAmountOnly() {
+    const input = document.getElementById('amountInput');
     input.value = '';
     calculate();
     input.focus();
   }
 
   function saveToArchive() {
-    const weight = parseFloat(document.getElementById('weight').value) || 0;
-    if (weight <= 0) {
-      alert('重量（g）を入力してください');
+    const amountVal = parseFloat(document.getElementById('amountInput').value) || 0;
+    if (amountVal <= 0) {
+      alert(selectedItem.unit === 'pcs' ? '数量（個）を入力してください' : '重量（g）を入力してください');
       return;
     }
 
@@ -815,7 +830,7 @@
       body: JSON.stringify(curCalculatedData)
     }).then(() => {
       showToast('スプレッドシートに保管しました');
-      clearWeightOnly();
+      clearAmountOnly();
     }).catch(err => {
       alert('送信エラー: ' + err);
     });
@@ -844,7 +859,13 @@
         if (res.status === 'success' && res.items && res.items.length > 0) {
           gasUrl = url;
           localStorage.setItem('fushimidou_gas_url', gasUrl);
-          items = res.items;
+          
+          items = res.items.map(item => ({
+            name: item.name,
+            rate: Number(item.rate),
+            unit: (item.unit === 'pcs' || item.unit === '個') ? 'pcs' : 'kg'
+          }));
+
           localStorage.setItem('app_master_items', JSON.stringify(items));
           localStorage.setItem('fushimidou_last_sync', Date.now());
           
@@ -861,7 +882,7 @@
         }
       })
       .catch(err => {
-        alert('接続エラー: URLが正しいか、GASが全員アクセス可能でデプロイされているか確認してください\n' + err);
+        alert('接続エラー: URLが正しいか確認してください\n' + err);
       });
   }
 
@@ -880,7 +901,12 @@
       .then(res => res.json())
       .then(res => {
         if (res.status === 'success' && res.items && res.items.length > 0) {
-          items = res.items;
+          items = res.items.map(item => ({
+            name: item.name,
+            rate: Number(item.rate),
+            unit: (item.unit === 'pcs' || item.unit === '個') ? 'pcs' : 'kg'
+          }));
+
           localStorage.setItem('app_master_items', JSON.stringify(items));
           localStorage.setItem('fushimidou_last_sync', Date.now());
 
@@ -931,15 +957,20 @@
   function refreshMasterModalList() {
     const list = document.getElementById('masterList');
     list.innerHTML = '';
-    items.forEach(item => list.appendChild(createMasterRow(item.name, item.rate)));
+    items.forEach(item => list.appendChild(createMasterRow(item.name, item.rate, item.unit)));
   }
 
-  function createMasterRow(name = '', rate = '') {
+  function createMasterRow(name = '', rate = '', unit = 'kg') {
     const div = document.createElement('div');
     div.className = 'master-row';
+    const isPcs = (unit === 'pcs' || unit === '個');
     div.innerHTML = `
       <div class="drag-handle" title="ドラッグして並び替え">☰</div>
       <input type="text" class="name" placeholder="品目名" value="${name}">
+      <select class="unit">
+        <option value="kg" ${!isPcs ? 'selected' : ''}>kg</option>
+        <option value="pcs" ${isPcs ? 'selected' : ''}>個</option>
+      </select>
       <input type="number" class="rate" placeholder="単価" value="${rate}">
       <button class="btn-del" onclick="this.parentElement.remove()">✕</button>
     `;
@@ -948,12 +979,11 @@
 
   function addNewMasterRow() {
     const list = document.getElementById('masterList');
-    const newRow = createMasterRow();
+    const newRow = createMasterRow('', '', 'kg');
     list.appendChild(newRow);
     newRow.querySelector('.name').focus();
   }
 
-  /* 連携・パスコードのみ保存 */
   function saveConnectionSettingsOnly() {
     const url = document.getElementById('inputGasUrl').value.trim();
     gasUrl = url;
@@ -972,14 +1002,14 @@
     showToast('設定を保存しました');
   }
 
-  /* 品目マスタを全端末（スプレッドシート）へ上書き同期 */
   function saveMasterDataSafe() {
     const rows = document.querySelectorAll('.master-row');
     const newItems = [];
     rows.forEach(row => {
       const name = row.querySelector('.name').value.trim();
       const rate = parseFloat(row.querySelector('.rate').value) || 0;
-      if (name) newItems.push({ name, rate });
+      const unit = row.querySelector('.unit').value || 'kg';
+      if (name) newItems.push({ name, rate, unit });
     });
 
     if (newItems.length === 0) {
@@ -1019,7 +1049,7 @@
   /* テンキー相互変換 */
   let currentConvMode = 'priceToCipher';
   let curInputStr = '';
-  let activeExtraRate = 0; // 0, 0.044, 0.05, 0.055, 0.11
+  let activeExtraRate = 0;
 
   function openConvModal() {
     document.getElementById('convModal').style.display = 'block';
