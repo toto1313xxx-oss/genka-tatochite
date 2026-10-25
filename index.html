@@ -611,33 +611,16 @@
   const revMap = { 'ヒ':'1', 'コ':'2', 'ト':'3', 'ニ':'4', 'サ':'5', 'カ':'6', 'エ':'7', 'ル':'8', 'ウ':'9', 'チ':'0' };
   const prefixDigitLen = { 'テ': 7, 'チ': 6, 'ト': 5, 'タ': 4 };
 
-  /* 符牒生成
-     shouldRound: trueなら実務切り上げ適用（手数料加算時 / 計量器計算時）
-                  falseなら切り上げなし（電卓の手数料なし時）
-  */
-  function getCipher(priceYen, shouldRound = true) {
+  /* 符牒生成（最大有効文字数3桁を超える場合のみ切り上げ、末尾キリ番チ省略） */
+  function getCipher(priceYen) {
     if (!priceYen || priceYen < 1000) return "----";
     let num = Math.floor(priceYen);
 
-    if (shouldRound) {
-      // 金額規模に応じた切り上げ単位
-      if (num >= 1000000) {
-        num = Math.ceil(num / 100000) * 100000; // 100万円以上は10万円単位
-      } else if (num >= 100000) {
-        num = Math.ceil(num / 1000) * 1000;     // 10万円台は千円単位（例: 107,143 -> 108,000）
-      } else if (num >= 10000) {
-        num = Math.ceil(num / 1000) * 1000;     // 1万円台は千円単位（例: 12,660 -> 13,000）
-      } else if (num >= 1000) {
-        num = Math.ceil(num / 100) * 100;       // 千円台は100円単位（例: 5,275 -> 5,300）
-      }
-    } else {
-      // 切り上げなし時でも、有効数字3桁（最大4文字）を超える端数がある場合は
-      // 符号化表現の制限上、切り捨てで目減りしないよう最低限の端数繰り上げのみ行う
-      let s = String(num);
-      if (s.length > 3) {
-        const unit = Math.pow(10, s.length - 3);
-        num = Math.ceil(num / unit) * unit;
-      }
+    // 最大有効文字3桁（接頭辞含め最大4文字）に収まらない端数のみ切り上げ
+    let s = String(num);
+    if (s.length > 3) {
+      const unit = Math.pow(10, s.length - 3);
+      num = Math.ceil(num / unit) * unit;
     }
 
     let prefix = "";
@@ -732,8 +715,7 @@
     const indivEst = selectedItem.rate * (weight / 1000);
     const cost = indivEst * ratio;
     const actualYen = Math.round(cost * 1000);
-    // 計量器のロット確定原価は常に切り上げ適用（true）
-    const cipher = getCipher(actualYen, true);
+    const cipher = getCipher(actualYen);
 
     document.getElementById('indivEst').textContent = indivEst.toFixed(1);
     document.getElementById('finalCost').textContent = cost.toFixed(1);
@@ -1058,18 +1040,16 @@
     dispInput.textContent = baseVal.toLocaleString() + ' 円';
 
     if (activeExtraRate > 0) {
-      // 手数料ボタンあり：加算した上で「実務切り上げ」を適用（shouldRound = true）
       const addedVal = Math.round(baseVal * (1 + activeExtraRate));
       let rateLabel = (activeExtraRate * 100) + '%';
       if (activeExtraRate === 0.044) rateLabel = '4.4%';
       else if (activeExtraRate === 0.055) rateLabel = '5.5%';
       
       dispSubVal.textContent = `(+${rateLabel}: ${addedVal.toLocaleString()} 円)`;
-      dispOutput.textContent = getCipher(addedVal, true);
+      dispOutput.textContent = getCipher(addedVal);
     } else {
-      // 手数料ボタンなし：実務切り上げをせずそのまま変換（shouldRound = false）
       dispSubVal.textContent = '';
-      dispOutput.textContent = getCipher(baseVal, false);
+      dispOutput.textContent = getCipher(baseVal);
     }
   }
 
