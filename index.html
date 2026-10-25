@@ -147,13 +147,6 @@
       filter: drop-shadow(0 0 12px rgba(252, 246, 186, 0.4)); min-height: 54px; line-height: 54px;
     }
 
-    /* 符牒の下の小さな付箋。ロットIDは任意発行 */
-    .lot-id-note { width:100%; margin-top:10px; padding:10px 12px; background:#f4e4a4; color:#3b3118; border-radius:5px; border-left:4px solid #c7a13a; text-align:left; box-shadow:2px 3px 7px rgba(0,0,0,.2); }
-    .lot-id-heading { font-size:12px; font-weight:900; }
-    .lot-id-value { font-size:14px; font-weight:800; margin-top:4px; overflow-wrap:anywhere; }
-    .lot-id-memo { font-size:12px; margin-top:4px; white-space:pre-wrap; overflow-wrap:anywhere; }
-    .lot-id-button { margin-top:8px; border:1px solid #947327; border-radius:7px; background:#fff7d8; color:#3b3118; padding:9px 12px; font-size:13px; font-weight:800; cursor:pointer; width:100%; }
-
     /* アクションボタン */
     .action-row { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 8px; }
     .btn-save-row {
@@ -187,11 +180,12 @@
     .conv-display { background: #0a0b0e; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
     .conv-disp-top { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #a1a1aa; margin-bottom: 2px; }
     
-    /* 加算トグルボタングループ */
-    .tax-toggle-group { display: flex; gap: 4px; }
+    /* 加算トグルボタングループ（4.4%, 5%, 5.5%, 11%） */
+    .tax-toggle-group { display: flex; gap: 3px; }
     .btn-tax-toggle {
-      background: #27272a; border: 1px solid #52525b; color: #a1a1aa; padding: 2px 7px;
+      background: #27272a; border: 1px solid #52525b; color: #a1a1aa; padding: 2px 5px;
       border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; transition: all 0.15s ease;
+      white-space: nowrap;
     }
     .btn-tax-toggle.active {
       background: #b8860b; border-color: #fef08a; color: #0c0d10; font-weight: 900;
@@ -367,13 +361,6 @@
     </div>
     <div class="cipher-label">確定原価 符牒</div>
     <div class="cipher-badge" id="cipherCode">----</div>
-    <!-- 任意: 山の名前と仕入日からロットIDを発行。原価計算は従来どおり -->
-    <div class="lot-id-note">
-      <div class="lot-id-heading">📝 ロットID・付箋メモ</div>
-      <div id="issuedLotId" class="lot-id-value">未発行</div>
-      <div id="issuedLotMemo" class="lot-id-memo">メモなし</div>
-      <button type="button" class="lot-id-button" onclick="issueLotId()">ID発行／付箋メモ</button>
-    </div>
   </div>
 
   <!-- 保存 & クリアボタン -->
@@ -401,8 +388,9 @@
     <div class="conv-display">
       <div class="conv-disp-top">
         <span id="dispLabel">入力した価格（円）</span>
-        <!-- 加算切り替え（5%, 5.5%, 11%） -->
+        <!-- 加算切り替え（4.4%, 5%, 5.5%, 11%） -->
         <div class="tax-toggle-group" id="taxToggleGroup">
+          <button type="button" class="btn-tax-toggle" id="btnTax44" onclick="setExtraPercent(0.044, this)">+4.4%</button>
           <button type="button" class="btn-tax-toggle" id="btnTax5" onclick="setExtraPercent(0.05, this)">+5%</button>
           <button type="button" class="btn-tax-toggle" id="btnTax55" onclick="setExtraPercent(0.055, this)">+5.5%</button>
           <button type="button" class="btn-tax-toggle" id="btnTax11" onclick="setExtraPercent(0.11, this)">+11%</button>
@@ -632,11 +620,11 @@
     if (num >= 1000000) {
       num = Math.ceil(num / 100000) * 100000; // 100万円以上は10万円単位
     } else if (num >= 100000) {
-      num = Math.ceil(num / 1000) * 1000;     // 10万円台は千円単位（107,143 -> 108,000 [チヒチル]）
+      num = Math.ceil(num / 1000) * 1000;     // 10万円台は千円単位（例: 107,143 -> 108,000 [チヒチル]）
     } else if (num >= 10000) {
-      num = Math.ceil(num / 1000) * 1000;     // 1万円台は千円単位（12,660 -> 13,000 [トヒトチ]）
+      num = Math.ceil(num / 1000) * 1000;     // 1万円台は千円単位（例: 12,660 -> 13,000 [トヒトチ]）
     } else if (num >= 1000) {
-      num = Math.ceil(num / 100) * 100;       // 千円台は100円単位（5,275 -> 5,300 [タサトチ]）
+      num = Math.ceil(num / 100) * 100;       // 千円台は100円単位（例: 5,275 -> 5,300 [タサトチ]）
     }
 
     let prefix = "";
@@ -705,35 +693,6 @@
 
   let curCalculatedData = null;
 
-  // ロットIDは「仕入日_山の名前」。同一の山は同一IDで扱い、商品単位の連番は作らない。
-  let issuedLot = null;
-  function issueLotId() {
-    const lotName = document.getElementById('lotName').value.trim();
-    if (!lotName) {
-      alert('先に「山の名前（ロット名）」を入力してください。');
-      document.getElementById('lotName').focus();
-      return;
-    }
-    const today = new Date();
-    const localDate = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
-    const input = prompt('⚠️ 注意：IDの日付は「計算日」ではなく「仕入日」です。\n仕入日を確認・修正してください（YYYY-MM-DD）。\n同じ日に同じ山の名前を使うとIDが重複します。', issuedLot?.date || localDate);
-    if (input === null) return;
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input.trim());
-    const parsed = match && new Date(input.trim() + 'T12:00:00');
-    if (!parsed || Number(match[1]) !== parsed.getFullYear() || Number(match[2]) !== parsed.getMonth()+1 || Number(match[3]) !== parsed.getDate()) {
-      alert('仕入日を YYYY-MM-DD の形式で正しく入力してください。');
-      return;
-    }
-    const memo = prompt('📝 付箋メモ（任意）\n注意点・特徴などを入力してください。', issuedLot?.memo || '');
-    if (memo === null) return;
-    const id = input.trim().replace(/-/g, '') + '_' + lotName;
-    if (!confirm('この内容でロットIDを発行しますか？\n' + id + '\n※山の名前・仕入日を変更したら再発行してください。')) return;
-    issuedLot = { id, date:input.trim(), name:lotName, memo:memo.trim() };
-    document.getElementById('issuedLotId').textContent = id;
-    document.getElementById('issuedLotMemo').textContent = memo.trim() || 'メモなし';
-    calculate();
-  }
-
   function calculate() {
     const buyPriceInput = document.getElementById('buyPrice').value;
     const lotEstimateInput = document.getElementById('lotEstimate').value;
@@ -770,10 +729,7 @@
       ratioPercent: (ratio > 0) ? (ratio * 100).toFixed(1) + '%' : '0.0%',
       indivEstYen: Math.round(indivEst * 1000),
       actualYen: actualYen,
-      cipher: cipher,
-      lotId: issuedLot && issuedLot.name === document.getElementById('lotName').value.trim() ? issuedLot.id : '',
-      lotMemo: issuedLot && issuedLot.name === document.getElementById('lotName').value.trim() ? issuedLot.memo : '',
-      purchaseDate: issuedLot && issuedLot.name === document.getElementById('lotName').value.trim() ? issuedLot.date : ''
+      cipher: cipher
     };
   }
 
@@ -1009,7 +965,7 @@
   /* テンキー相互変換 */
   let currentConvMode = 'priceToCipher';
   let curInputStr = '';
-  let activeExtraRate = 0; // 0, 0.05, 0.055, 0.11
+  let activeExtraRate = 0; // 0, 0.044, 0.05, 0.055, 0.11
 
   function openConvModal() {
     document.getElementById('convModal').style.display = 'block';
@@ -1081,7 +1037,10 @@
 
     if (activeExtraRate > 0) {
       const addedVal = Math.round(baseVal * (1 + activeExtraRate));
-      const rateLabel = (activeExtraRate === 0.055) ? '5.5%' : (activeExtraRate * 100) + '%';
+      let rateLabel = (activeExtraRate * 100) + '%';
+      if (activeExtraRate === 0.044) rateLabel = '4.4%';
+      else if (activeExtraRate === 0.055) rateLabel = '5.5%';
+      
       dispSubVal.textContent = `(+${rateLabel}: ${addedVal.toLocaleString()} 円)`;
       dispOutput.textContent = getCipher(addedVal);
     } else {
