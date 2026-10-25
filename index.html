@@ -133,7 +133,7 @@
       padding: 4px 8px; border-radius: 6px; cursor: pointer;
     }
 
-    /* 山の進捗パネル（目視確認 & やり直し削除） */
+    /* 山の進捗パネル */
     .progress-box {
       background: #11141c; border: 1px solid #1e293b; border-radius: 10px; padding: 10px; font-size: 11px; display: flex; flex-direction: column; gap: 6px;
     }
@@ -169,8 +169,22 @@
     .item-btn.active {
       border: 2px solid #fef08a; box-shadow: 0 0 16px rgba(234, 179, 8, 0.6); transform: scale(1.02);
     }
+    .item-btn.other-btn {
+      background: linear-gradient(135deg, #374151 0%, #1f2937 100%) !important;
+      border: 1px dashed #9ca3af;
+    }
     .item-name { font-size: 14px; font-weight: bold; color: #ffffff; }
     .item-rate { font-size: 11px; color: #fef08a; margin-top: 3px; font-weight: 700; }
+
+    /* その他（自由入力）パネル */
+    .other-custom-panel {
+      background: #111318; border: 1px solid #b8860b; border-radius: 10px; padding: 10px; display: none; flex-direction: column; gap: 8px; margin-top: 6px;
+    }
+    .other-input-row { display: grid; grid-template-columns: 1.5fr 1fr; gap: 6px; }
+    .other-input-row input { background: #0a0b0e; border: 1px solid #52525b; color: #fef08a; padding: 8px; border-radius: 6px; font-size: 13px; font-weight: bold; width: 100%; }
+    .unit-switch-group { display: flex; gap: 4px; align-items: center; }
+    .unit-switch-btn { background: #1e293b; border: 1px solid #475569; color: #cbd5e1; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold; }
+    .unit-switch-btn.active { background: #0284c7; border-color: #38bdf8; color: #fff; }
 
     /* 計量 / 数量 入力カード */
     .weight-card { background: var(--card-bg); border-radius: 12px; padding: 12px; border: 1px solid rgba(212, 175, 55, 0.3); }
@@ -371,13 +385,13 @@
         <button class="btn-header" style="padding:4px 8px; font-size:11px; background:#0284c7; border-color:#38bdf8; color:#fff;" onclick="openWonLotsModal()">📂 落札済の山を呼出</button>
       </div>
 
-      <!-- 呼出中の山ステータス表示（呼出時のみ出現） -->
+      <!-- 呼出中の山ステータス表示 -->
       <div id="loadedLotStatusBar" class="loaded-lot-status-bar" style="display:none;">
         <span id="loadedLotStatusText">呼出中: 象牙山#1</span>
         <button class="btn-complete-lot" onclick="markCurrentLotCompleted()">🏁 符牒付け完了にする</button>
       </div>
 
-      <!-- 本ロットの仕入登録済進捗パネル（目視確認 & 削除リカバー用） -->
+      <!-- 本ロットの仕入登録済進捗パネル -->
       <div id="lotProgressBox" class="progress-box" style="display:none;">
         <div class="progress-stat-row">
           <span>進捗: <span class="progress-stat-val" id="progCountText">0 / 0 品</span></span>
@@ -432,8 +446,22 @@
 
     <!-- 品目グリッド -->
     <div>
-      <div class="section-title">品目（高単価: 朱・紅 ↔ 低単価: 藍・紺）</div>
+      <div class="section-title">品目を選択（末尾に「その他」あり）</div>
       <div class="grid" id="itemGrid"></div>
+
+      <!-- その他（自由入力）パネル -->
+      <div id="costOtherPanel" class="other-custom-panel">
+        <div style="font-size:11px; color:#fef08a; font-weight:bold;">📝 その他の品名・単価を手入力</div>
+        <div class="other-input-row">
+          <input type="text" id="costOtherName" placeholder="品目名 (例: 変形牙細工)" oninput="calculate()">
+          <input type="number" id="costOtherRate" placeholder="単価(千円)" inputmode="numeric" oninput="calculate()">
+        </div>
+        <div class="unit-switch-group">
+          <span style="font-size:11px; color:#a1a1aa;">単位:</span>
+          <button type="button" class="unit-switch-btn active" id="costUnitBtnKg" onclick="setCostOtherUnit('kg')">kg</button>
+          <button type="button" class="unit-switch-btn" id="costUnitBtnPcs" onclick="setCostOtherUnit('pcs')">個</button>
+        </div>
+      </div>
     </div>
 
     <!-- 計量 / 数量 入力 -->
@@ -484,8 +512,22 @@
 
     <!-- 品目グリッド（見積用） -->
     <div>
-      <div class="section-title">品目を選択</div>
+      <div class="section-title">品目を選択（末尾に「その他」あり）</div>
       <div class="grid" id="estItemGrid"></div>
+
+      <!-- その他（自由入力）パネル（下見用） -->
+      <div id="estOtherPanel" class="other-custom-panel">
+        <div style="font-size:11px; color:#fef08a; font-weight:bold;">📝 その他の品名・単価を手入力</div>
+        <div class="other-input-row">
+          <input type="text" id="estOtherName" placeholder="品目名 (例: 象牙根付)">
+          <input type="number" id="estOtherRate" placeholder="単価(千円)" inputmode="numeric">
+        </div>
+        <div class="unit-switch-group">
+          <span style="font-size:11px; color:#a1a1aa;">単位:</span>
+          <button type="button" class="unit-switch-btn active" id="estUnitBtnKg" onclick="setEstOtherUnit('kg')">kg</button>
+          <button type="button" class="unit-switch-btn" id="estUnitBtnPcs" onclick="setEstOtherUnit('pcs')">個</button>
+        </div>
+      </div>
     </div>
 
     <!-- 見積数量入力 -->
@@ -744,8 +786,28 @@
     unit: (item.unit === 'pcs' || item.unit === '個') ? 'pcs' : 'kg'
   }));
 
+  // 現在選択中の品目オブジェクト（isOtherフラグ付き）
   let selectedItem = items[0] || { name: '', rate: 0, unit: 'kg' };
   let selectedEstItem = items[0] || { name: '', rate: 0, unit: 'kg' };
+
+  // 「その他」入力用の一時ステート
+  let costOtherUnit = 'kg';
+  let estOtherUnit = 'kg';
+
+  function setCostOtherUnit(unit) {
+    costOtherUnit = unit;
+    document.getElementById('costUnitBtnKg').classList.toggle('active', unit === 'kg');
+    document.getElementById('costUnitBtnPcs').classList.toggle('active', unit === 'pcs');
+    updateInputSectionUI();
+    calculate();
+  }
+
+  function setEstOtherUnit(unit) {
+    estOtherUnit = unit;
+    document.getElementById('estUnitBtnKg').classList.toggle('active', unit === 'kg');
+    document.getElementById('estUnitBtnPcs').classList.toggle('active', unit === 'pcs');
+    updateEstInputSectionUI();
+  }
 
   // --- JSONP ローダー ---
   function fetchJsonp(url, params = {}) {
@@ -827,7 +889,7 @@
     return selectedEstVenue;
   }
 
-  // --- グリッド描画 & 単位切替 ---
+  // --- グリッド描画 & 「その他」ボタン組み込み ---
   function getRateColor(rate, minRate, maxRate) {
     if (maxRate === minRate) return 'linear-gradient(135deg, #1e293b, #0f172a)';
     const ratio = Math.min(Math.max((rate - minRate) / (maxRate - minRate), 0), 1);
@@ -841,21 +903,38 @@
     const rates = items.map(i => i.rate);
     const minRate = Math.min(...rates), maxRate = Math.max(...rates);
 
+    // マスタ品目
     items.forEach((item) => {
       const btn = document.createElement('button');
-      btn.className = `item-btn ${item.name === selectedItem.name ? 'active' : ''}`;
+      btn.className = `item-btn ${(!selectedItem.isOther && item.name === selectedItem.name) ? 'active' : ''}`;
       btn.style.background = getRateColor(item.rate, minRate, maxRate);
       const unitLabel = (item.unit === 'pcs') ? '千円/個' : '千円/kg';
       btn.innerHTML = `<div class="item-name">${item.name}</div><div class="item-rate">${item.rate} ${unitLabel}</div>`;
       btn.onclick = () => {
         document.querySelectorAll('#itemGrid .item-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        selectedItem = item;
+        selectedItem = { ...item, isOther: false };
+        document.getElementById('costOtherPanel').style.display = 'none';
         updateInputSectionUI();
         calculate();
       };
       grid.appendChild(btn);
     });
+
+    // 「その他」常設ボタン
+    const otherBtn = document.createElement('button');
+    otherBtn.className = `item-btn other-btn ${selectedItem.isOther ? 'active' : ''}`;
+    otherBtn.innerHTML = `<div class="item-name">✏️ その他</div><div class="item-rate">自由入力</div>`;
+    otherBtn.onclick = () => {
+      document.querySelectorAll('#itemGrid .item-btn').forEach(b => b.classList.remove('active'));
+      otherBtn.classList.add('active');
+      selectedItem = { isOther: true };
+      document.getElementById('costOtherPanel').style.display = 'flex';
+      updateInputSectionUI();
+      calculate();
+    };
+    grid.appendChild(otherBtn);
+
     updateInputSectionUI();
   }
 
@@ -867,29 +946,44 @@
 
     items.forEach((item) => {
       const btn = document.createElement('button');
-      btn.className = `item-btn ${item.name === selectedEstItem.name ? 'active' : ''}`;
+      btn.className = `item-btn ${(!selectedEstItem.isOther && item.name === selectedEstItem.name) ? 'active' : ''}`;
       btn.style.background = getRateColor(item.rate, minRate, maxRate);
       const unitLabel = (item.unit === 'pcs') ? '千円/個' : '千円/kg';
       btn.innerHTML = `<div class="item-name">${item.name}</div><div class="item-rate">${item.rate} ${unitLabel}</div>`;
       btn.onclick = () => {
         document.querySelectorAll('#estItemGrid .item-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        selectedEstItem = item;
+        selectedEstItem = { ...item, isOther: false };
+        document.getElementById('estOtherPanel').style.display = 'none';
         updateEstInputSectionUI();
       };
       grid.appendChild(btn);
     });
+
+    // 見積用「その他」ボタン
+    const otherBtn = document.createElement('button');
+    otherBtn.className = `item-btn other-btn ${selectedEstItem.isOther ? 'active' : ''}`;
+    otherBtn.innerHTML = `<div class="item-name">✏️ その他</div><div class="item-rate">自由入力</div>`;
+    otherBtn.onclick = () => {
+      document.querySelectorAll('#estItemGrid .item-btn').forEach(b => b.classList.remove('active'));
+      otherBtn.classList.add('active');
+      selectedEstItem = { isOther: true };
+      document.getElementById('estOtherPanel').style.display = 'flex';
+      updateEstInputSectionUI();
+    };
+    grid.appendChild(otherBtn);
+
     updateEstInputSectionUI();
   }
 
   function updateInputSectionUI() {
-    const isPcs = (selectedItem.unit === 'pcs');
+    const isPcs = selectedItem.isOther ? (costOtherUnit === 'pcs') : (selectedItem.unit === 'pcs');
     document.getElementById('inputSectionTitle').textContent = isPcs ? '数量入力' : 'はかり計量値';
     document.getElementById('unitTextBadge').textContent = isPcs ? '個' : 'g';
   }
 
   function updateEstInputSectionUI() {
-    const isPcs = (selectedEstItem.unit === 'pcs');
+    const isPcs = selectedEstItem.isOther ? (estOtherUnit === 'pcs') : (selectedEstItem.unit === 'pcs');
     document.getElementById('estInputSectionTitle').textContent = isPcs ? '見積 数量入力' : '見積 はかり計量値';
     document.getElementById('estUnitTextBadge').textContent = isPcs ? '個' : 'g';
   }
@@ -966,7 +1060,7 @@
 
   // --- 確定原価 計算 ---
   let curCalculatedData = null;
-  let activeLoadedLot = null; // 呼出中の山データ全体オブジェクト
+  let activeLoadedLot = null;
 
   function calculate() {
     const buyPrice = parseFloat(document.getElementById('buyPrice').value) || 0;
@@ -976,8 +1070,18 @@
     const ratio = (lotEstimate > 0) ? (buyPrice / lotEstimate) : 0;
     document.getElementById('lotRatioBadge').textContent = (ratio > 0) ? (ratio * 100).toFixed(1) + '%' : '---- %';
 
-    const isPcs = (selectedItem.unit === 'pcs');
-    const indivEst = isPcs ? (selectedItem.rate * amountVal) : (selectedItem.rate * (amountVal / 1000));
+    let effItemName = selectedItem.name;
+    let effRate = selectedItem.rate || 0;
+    let effUnit = selectedItem.unit || 'kg';
+
+    if (selectedItem.isOther) {
+      effItemName = document.getElementById('costOtherName').value.trim() || 'その他';
+      effRate = parseFloat(document.getElementById('costOtherRate').value) || 0;
+      effUnit = costOtherUnit;
+    }
+
+    const isPcs = (effUnit === 'pcs');
+    const indivEst = isPcs ? (effRate * amountVal) : (effRate * (amountVal / 1000));
     const cost = indivEst * ratio;
     const actualYen = Math.round(cost * 1000);
     const cipher = getCipher(actualYen);
@@ -991,7 +1095,7 @@
       date: new Date().toLocaleString('ja-JP'),
       auction: getActiveVenueName(),
       lotName: document.getElementById('lotName').value.trim() || '未設定',
-      itemName: selectedItem.name,
+      itemName: effItemName,
       unitType: isPcs ? '個' : 'kg',
       amount: amountVal,
       buyPriceYen: Math.round(buyPrice * 1000),
@@ -1014,7 +1118,8 @@
   function saveToArchive() {
     const amountVal = parseFloat(document.getElementById('amountInput').value) || 0;
     if (amountVal <= 0) {
-      alert(selectedItem.unit === 'pcs' ? '数量（個）を入力してください' : '重量（g）を入力してください');
+      const isPcs = selectedItem.isOther ? (costOtherUnit === 'pcs') : (selectedItem.unit === 'pcs');
+      alert(isPcs ? '数量（個）を入力してください' : '重量（g）を入力してください');
       return;
     }
     calculate();
@@ -1029,7 +1134,7 @@
       showToast('スプレッドシートに保管しました');
       clearAmountOnly();
       if (activeLoadedLot) {
-        setTimeout(refreshLotProgress, 1200); // シート反映後に進捗更新
+        setTimeout(refreshLotProgress, 1200);
       }
     }).catch(err => alert('送信エラー: ' + err));
   }
@@ -1095,7 +1200,6 @@
     }).catch(err => alert('削除エラー: ' + err));
   }
 
-  // --- スタッフ側：符牒付け完了（見積一覧へ引き渡し） ---
   function markCurrentLotCompleted() {
     if (!activeLoadedLot) return;
     if (!confirm('この山の符牒付けを完了にしますか？\n（呼出リストから外れ、責任者の一覧で完了表示になります）')) return;
@@ -1120,7 +1224,7 @@
 
   // --- 下見見積り積算ロジック ---
   let estimateItems = [];
-  let currentEstLimitRate = 0.8; // nullなら「なし」
+  let currentEstLimitRate = 0.8;
 
   function setEstLimitRate(rate, btn) {
     currentEstLimitRate = rate;
@@ -1149,19 +1253,30 @@
 
   function addEstimateItem() {
     const amount = parseFloat(document.getElementById('estAmountInput').value) || 0;
+    let effName = selectedEstItem.name;
+    let effRate = selectedEstItem.rate || 0;
+    let effUnit = selectedEstItem.unit || 'kg';
+
+    if (selectedEstItem.isOther) {
+      effName = document.getElementById('estOtherName').value.trim() || 'その他';
+      effRate = parseFloat(document.getElementById('estOtherRate').value) || 0;
+      effUnit = estOtherUnit;
+      if (effRate <= 0) { alert('その他の単価を入力してください'); return; }
+    }
+
     if (amount <= 0) {
-      alert(selectedEstItem.unit === 'pcs' ? '数量（個）を入力してください' : '重量（g）を入力してください');
+      alert(effUnit === 'pcs' ? '数量（個）を入力してください' : '重量（g）を入力してください');
       return;
     }
 
-    const isPcs = (selectedEstItem.unit === 'pcs');
-    const subtotalThousand = isPcs ? (selectedEstItem.rate * amount) : (selectedEstItem.rate * (amount / 1000));
+    const isPcs = (effUnit === 'pcs');
+    const subtotalThousand = isPcs ? (effRate * amount) : (effRate * (amount / 1000));
     
     estimateItems.push({
-      itemName: selectedEstItem.name,
-      unit: selectedEstItem.unit,
+      itemName: effName,
+      unit: effUnit,
       amount: amount,
-      rate: selectedEstItem.rate,
+      rate: effRate,
       subtotalThousand: subtotalThousand
     });
 
@@ -1284,7 +1399,6 @@
     fetchJsonp(gasUrl, { action: 'getEstimates' })
       .then(res => {
         if (res.status === 'success') {
-          // 「削除（アーカイブ）」以外の山を新しい順で表示
           loadedEstimates = res.estimates.filter(e => e.status !== '削除').reverse();
           renderEstimatesCards();
           if (showNotice) showToast('見積一覧を更新しました');
@@ -1312,7 +1426,6 @@
 
       const buyPriceThousand = (est.buyPriceYen > 0) ? (est.buyPriceYen / 1000).toFixed(1) : '';
 
-      // 完了状態の山には「差し戻し」と「一覧から削除」ボタンを表示
       let managerControls = '';
       if (est.status === '完了') {
         managerControls = `
@@ -1410,7 +1523,6 @@
     fetchJsonp(gasUrl, { action: 'getEstimates' })
       .then(res => {
         if (res.status === 'success') {
-          // 「落札」状態の未完了山のみ抽出
           const wonLots = res.estimates.filter(e => e.status === '落札');
           if (wonLots.length === 0) {
             container.innerHTML = '<div style="color:#71717a; text-align:center; padding:20px;">落札済みの未処理山はありません</div>';
@@ -1445,7 +1557,6 @@
   function selectWonLotToCostMode(lot) {
     activeLoadedLot = lot;
 
-    // 会場セット
     const venueBtns = document.querySelectorAll('.lot-card .venue-btn');
     let matched = false;
     venueBtns.forEach(b => {
@@ -1465,12 +1576,10 @@
       document.getElementById('buyPrice').value = (lot.buyPriceYen / 1000).toFixed(1);
     }
 
-    // ステータスバー表示
     const statusBar = document.getElementById('loadedLotStatusBar');
     document.getElementById('loadedLotStatusText').textContent = `呼出中: ${lot.lotName} (${lot.date || ''})`;
     statusBar.style.display = 'flex';
 
-    // 内訳を確定原価画面の参照枠へ展開
     const box = document.getElementById('costRefDetailsBox');
     const list = document.getElementById('costRefList');
     if (lot.items && lot.items.length > 0) {
@@ -1484,7 +1593,7 @@
     calculate();
     closeWonLotsModal();
     showToast('落札山の情報を呼び出しました');
-    refreshLotProgress(); // 進捗を取得
+    refreshLotProgress();
   }
 
   function toggleCostRefList() {
