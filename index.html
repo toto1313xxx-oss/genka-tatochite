@@ -7,6 +7,12 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="伏見堂 原価符牒">
+  
+  <!-- GitHub Pages & モバイルPWAキャッシュ対策 -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
   <title>伏見堂 - 原価符牒計算機</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -252,6 +258,7 @@
     .url-input-row { display: flex; gap: 6px; align-items: center; }
     .btn-connect-gas { background: #0284c7; border: 1px solid #38bdf8; color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; }
     .btn-save-conn { width: 100%; background: #334155; border: 1px solid #64748b; color: #f8fafc; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; margin-top: 8px; cursor: pointer; }
+    .btn-update-app { width: 100%; background: #1e293b; border: 1px solid #0284c7; color: #38bdf8; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; margin-top: 8px; cursor: pointer; }
     .btn-save-master { width: 100%; background: linear-gradient(180deg, #d4af37 0%, #92661d 100%); border: 1px solid #fef08a; color: #0c0d10; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: 900; margin-top: 10px; cursor: pointer; }
   </style>
 </head>
@@ -463,6 +470,7 @@
       </div>
 
       <button class="btn-save-conn" onclick="saveConnectionSettingsOnly()">設定（URL・パスコード）のみ保存</button>
+      <button type="button" class="btn-update-app" onclick="forceAppUpdate()">🔄 アプリを最新バージョンに強制更新</button>
     </div>
 
     <!-- ② 品目マスタ編集ブロック -->
@@ -478,6 +486,40 @@
 </div>
 
 <script>
+  // --- GitHub Pages PWA 自動バージョンチェック＆更新スクリプト ---
+  (function checkPwaUpdate() {
+    const lastCheck = sessionStorage.getItem('last_update_check');
+    const now = Date.now();
+    // 連続アクセス防止（1分間は再チェックをスキップ）
+    if (lastCheck && now - Number(lastCheck) < 60000) return;
+    sessionStorage.setItem('last_update_check', now);
+
+    // キャッシュを無視して最新のHTMLを取得
+    fetch(window.location.pathname + '?_t=' + now, { cache: 'no-store' })
+      .then(response => response.text())
+      .then(html => {
+        const currentLen = document.documentElement.outerHTML.length;
+        const newLen = html.length;
+        // サーバー側のファイルサイズに明らかな差があれば自動再読み込み
+        if (Math.abs(currentLen - newLen) > 10) {
+          console.log('新バージョン検出: アプリを更新します');
+          const cleanUrl = new URL(window.location.href);
+          cleanUrl.searchParams.set('v', now);
+          window.location.replace(cleanUrl.toString());
+        }
+      })
+      .catch(e => console.log('更新チェック待機:', e));
+  })();
+
+  function forceAppUpdate() {
+    if (confirm('最新のプログラムを再読み込みしますか？')) {
+      const targetUrl = new URL(window.location.href);
+      targetUrl.searchParams.set('reload_time', Date.now());
+      window.location.replace(targetUrl.toString());
+    }
+  }
+  // -------------------------------------------------------------
+
   const DEFAULT_PIN = "123456";
   let currentPin = localStorage.getItem('fushimidou_pin') || DEFAULT_PIN;
   let enteredPin = "";
@@ -624,7 +666,6 @@
 
     let res = [map[fullDigits[0]]];
     for (let i = 1; i < fullDigits.length; i++) {
-      // 残りの桁がすべて0の場合：チを添えて終了
       if (/^0+$/.test(fullDigits.slice(i))) {
         res.push("チ");
         break;
@@ -638,7 +679,6 @@
         res.push(map[fullDigits[i]]);
       }
 
-      // この桁以降がすべて0ならチを添えて終了
       if (/^0+$/.test(fullDigits.slice(i + 1))) {
         res.push("チ");
         break;
@@ -648,21 +688,15 @@
     return prefix + res.join("");
   }
 
-  /* 符牒生成メインロジック：
-     符牒文字数が4文字を超える場合のみ、4文字に収まるまで最小限の端数を切り上げ。
-     4文字目が「チ」の場合は末尾省略。
-  */
+  /* 符牒生成メインロジック（仕様維持） */
   function getCipher(priceYen) {
     if (!priceYen || priceYen < 1000) return "----";
     let num = Math.floor(priceYen);
 
-    // そのまま符牒化した文字列を取得
     let raw = buildRawCipher(num);
 
-    // 4文字を超えてしまう（＝5文字以上）場合のみ、4文字以内に収まるよう端数を切り上げ
     if (raw.length > 4) {
       let s = String(num);
-      // 有効数字3桁（最大4文字）に収めるための端数単位を計算
       const overflowDigits = s.length - 3;
       if (overflowDigits > 0) {
         const unit = Math.pow(10, overflowDigits);
@@ -671,10 +705,8 @@
       raw = buildRawCipher(num);
     }
 
-    // 最大4文字に制限
     let code = raw.slice(0, 4);
 
-    // 4文字目が「チ」の場合は末尾を省略（例: タサトチ -> タサト、トヒトチ -> トヒト）
     if (code.length === 4 && code.endsWith("チ")) {
       code = code.slice(0, 3);
     }
@@ -682,7 +714,7 @@
     return code;
   }
 
-  /* 符牒から価格へ復号（末尾チ省略型にも完全対応） */
+  /* 符牒から価格へ復号 */
   function decodeCipher(cipherStr) {
     const s = cipherStr.trim();
     if (!s) return "----";
@@ -692,7 +724,6 @@
     const targetLen = prefixDigitLen[first];
     const body = s.slice(1);
 
-    // 接頭辞 + 1文字 + オ の形式（例: トヒオ -> 10000）
     if (body.length === 2 && body[1] === 'オ' && revMap[body[0]]) {
       const numStr = revMap[body[0]].repeat(targetLen);
       return Number(numStr).toLocaleString() + " 円";
@@ -1030,7 +1061,6 @@
     }
   }
 
-  /* 加算切り替え（同一ボタンを押すと解除） */
   function setExtraPercent(rate, btn) {
     if (activeExtraRate === rate) {
       activeExtraRate = 0;
