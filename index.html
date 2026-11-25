@@ -7,7 +7,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="伏見堂 原価符牒">
-  
+  <meta name="app-version" content="2026.11.26-r2">
+
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -28,7 +29,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Mincho ProN", serif; -webkit-tap-highlight-color: transparent; }
     body { background-color: var(--bg-main); color: #e2e8f0; padding: 14px; min-height: 100vh; background-image: radial-gradient(circle at 50% 0%, #1c1a14 0%, #0c0d10 70%); }
     .container { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
-    
+
     /* 6桁PINロック */
     #lockScreen {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -115,7 +116,7 @@
     .input-group label { display: block; font-size: 11px; color: #a1a1aa; margin-bottom: 4px; font-weight: bold; }
     .input-group input { width: 100%; background: #0a0b0e; border: 1px solid #3f3f46; color: #fef08a; padding: 8px 10px; border-radius: 8px; font-size: 15px; font-weight: bold; }
     .input-group input.numeric { text-align: right; font-size: 18px; }
-    
+
     .ratio-bar {
       display: flex; justify-content: space-between; align-items: center; background: #0a0b0e;
       border: 1px dashed rgba(212, 175, 55, 0.4); border-radius: 8px; padding: 6px 12px; font-size: 12px;
@@ -125,12 +126,12 @@
 
     /* 呼出中のステータスバー & 完了ボタン */
     .loaded-lot-status-bar {
-      display: flex; justify-content: space-between; align-items: center; background: #0c2033;
+      display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #0c2033;
       border: 1px solid #0284c7; border-radius: 8px; padding: 6px 10px; font-size: 11px;
     }
     .btn-complete-lot {
       background: #059669; border: 1px solid #34d399; color: #fff; font-size: 11px; font-weight: bold;
-      padding: 4px 8px; border-radius: 6px; cursor: pointer;
+      padding: 4px 8px; border-radius: 6px; cursor: pointer; white-space: nowrap;
     }
 
     /* 山の進捗パネル */
@@ -143,24 +144,25 @@
       display: flex; flex-direction: column; gap: 4px; max-height: 140px; overflow-y: auto; margin-top: 4px; border-top: 1px solid #27272a; padding-top: 6px;
     }
     .progress-record-item {
-      display: flex; justify-content: space-between; align-items: center; background: #08090c; padding: 5px 8px; border-radius: 6px; border: 1px solid #1f242e;
+      display: flex; justify-content: space-between; align-items: center; gap: 6px; background: #08090c; padding: 5px 8px; border-radius: 6px; border: 1px solid #1f242e;
     }
     .btn-record-del {
-      background: #7f1d1d; border: 1px solid #b91c1c; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; cursor: pointer;
+      background: #7f1d1d; border: 1px solid #b91c1c; color: #fff; font-size: 10px; padding: 3px 8px; border-radius: 4px; cursor: pointer; white-space: nowrap;
     }
+    .btn-record-del:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* 参照内訳アコーディオン */
     .ref-details-box {
       background: #0b0d11; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; font-size: 11px;
     }
     .ref-details-title { color: #38bdf8; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; }
-    .ref-details-list { margin-top: 6px; display: flex; flex-direction: column; gap: 3px; max-height: 120px; overflow-y: auto; }
+    .ref-details-list { margin-top: 6px; display: none; flex-direction: column; gap: 3px; max-height: 120px; overflow-y: auto; }
 
     /* 品目グリッド */
     .section-title { font-size: 12px; color: #d4af37; font-weight: bold; margin-bottom: 4px; letter-spacing: 1.5px; display: flex; align-items: center; gap: 4px; }
     .section-title::before { content: '◆'; font-size: 9px; }
     .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    
+
     .item-btn {
       border-radius: 10px; padding: 12px 10px; text-align: left; cursor: pointer; transition: all 0.15s ease;
       border: 1px solid rgba(255,255,255,0.15); position: relative; overflow: hidden;
@@ -180,11 +182,12 @@
     .other-custom-panel {
       background: #111318; border: 1px solid #b8860b; border-radius: 10px; padding: 10px; display: none; flex-direction: column; gap: 8px; margin-top: 6px;
     }
-    .other-input-row { display: grid; grid-template-columns: 1.5fr 1fr; gap: 6px; }
+    .other-input-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 6px; }
     .other-input-row input { background: #0a0b0e; border: 1px solid #52525b; color: #fef08a; padding: 8px; border-radius: 6px; font-size: 13px; font-weight: bold; width: 100%; }
-    .unit-switch-group { display: flex; gap: 4px; align-items: center; }
-    .unit-switch-btn { background: #1e293b; border: 1px solid #475569; color: #cbd5e1; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold; }
+    .unit-switch-group { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+    .unit-switch-btn { background: #1e293b; border: 1px solid #475569; color: #cbd5e1; padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: bold; }
     .unit-switch-btn.active { background: #0284c7; border-color: #38bdf8; color: #fff; }
+    .flat-mode-hint { font-size: 11px; color: #38bdf8; background: #0c2033; border: 1px dashed #0284c7; border-radius: 6px; padding: 6px 8px; }
 
     /* 計量 / 数量 入力カード */
     .weight-card { background: var(--card-bg); border-radius: 12px; padding: 12px; border: 1px solid rgba(212, 175, 55, 0.3); }
@@ -245,7 +248,7 @@
 
     /* 見積一覧内の責任者アクション */
     .manager-action-row {
-      display: flex; gap: 6px; justify-content: flex-end; border-top: 1px dashed #27272a; padding-top: 8px; margin-top: 4px;
+      display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; border-top: 1px dashed #27272a; padding-top: 8px; margin-top: 4px;
     }
     .btn-mgr-rollback {
       background: #1e293b; border: 1px solid #64748b; color: #cbd5e1; font-size: 11px; font-weight: bold; padding: 6px 10px; border-radius: 6px; cursor: pointer;
@@ -262,6 +265,7 @@
       box-shadow: 0 4px 15px rgba(212, 175, 55, 0.35); text-align: center;
     }
     .btn-save-row:active { transform: scale(0.99); }
+    .btn-save-row:disabled, .btn-action-blue:disabled { opacity: 0.55; cursor: not-allowed; }
     .btn-next-only {
       background: #272a34; border: 1px solid #52525b; color: #e2e8f0; padding: 14px 10px; border-radius: 12px;
       font-size: 14px; font-weight: bold; cursor: pointer; text-align: center;
@@ -274,7 +278,7 @@
     #toast {
       position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
       background: rgba(16, 185, 129, 0.95); color: #fff; padding: 10px 20px; border-radius: 20px;
-      font-size: 13px; font-weight: bold; z-index: 10000; display: none;
+      font-size: 13px; font-weight: bold; z-index: 10000; display: none; white-space: nowrap;
     }
 
     /* モーダル */
@@ -308,6 +312,7 @@
     .key-btn.accent { background: linear-gradient(180deg, #92661d, #d4af37); color: #000; font-weight: 900; }
 
     /* 設定・マスタ管理 */
+    .setting-title { font-size: 12px; color: #e5c158; font-weight: bold; margin-bottom: 6px; }
     .master-row {
       display: grid; grid-template-columns: 24px 1.2fr 52px 64px 32px; gap: 5px; margin-bottom: 8px; align-items: center;
       background: #111216; border: 1px solid #27272a; padding: 6px; border-radius: 8px;
@@ -378,7 +383,6 @@
 
   <!-- ======================== モード1：確定原価 ======================== -->
   <div id="modeCostView" style="display:flex; flex-direction:column; gap:12px;">
-    <!-- ロット・仕入先設定カード -->
     <div class="lot-card">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <span class="input-label" style="margin-bottom:0;">オークション会場（仕入先）</span>
@@ -387,7 +391,7 @@
 
       <!-- 呼出中の山ステータス表示 -->
       <div id="loadedLotStatusBar" class="loaded-lot-status-bar" style="display:none;">
-        <span id="loadedLotStatusText">呼出中: 象牙山#1</span>
+        <span id="loadedLotStatusText">呼出中</span>
         <button class="btn-complete-lot" onclick="markCurrentLotCompleted()">🏁 符牒付け完了にする</button>
       </div>
 
@@ -398,8 +402,8 @@
           <span>登録原価計: <span class="progress-stat-val" id="progCostTotalText">0.0 千円</span></span>
         </div>
         <div class="progress-stat-row">
-          <span style="color:#a1a1aa;">残額: <span id="progRemainingCostText" style="font-weight:bold; color:#fef08a;">0.0 千円</span></span>
-          <span style="color:#94a3b8; font-size:10px;">間違えた品は「削除」で即やり直し</span>
+          <span style="color:#a1a1aa;">残額（買値基準）: <span id="progRemainingCostText" style="font-weight:bold; color:#fef08a;">0.0 千円</span></span>
+          <span style="color:#94a3b8; font-size:10px;">ID一致で安全削除</span>
         </div>
         <div id="progressRecordsList" class="progress-records-list"></div>
       </div>
@@ -421,14 +425,14 @@
       <div class="lot-row-2col">
         <div class="input-group">
           <label>総買値 (千円)</label>
-          <input type="number" id="buyPrice" class="numeric" placeholder="0" inputmode="numeric" oninput="calculate()">
+          <input type="number" id="buyPrice" class="numeric" placeholder="0" inputmode="decimal" oninput="calculate()">
         </div>
         <div class="input-group">
           <label>全体見積り (千円)</label>
-          <input type="number" id="lotEstimate" class="numeric" placeholder="0" inputmode="numeric" oninput="calculate()">
+          <input type="number" id="lotEstimate" class="numeric" placeholder="0" inputmode="decimal" oninput="calculate()">
         </div>
       </div>
-      
+
       <div class="ratio-bar">
         <span class="ratio-label">買値比率（買値 ÷ 見積総額）:</span>
         <span class="ratio-val" id="lotRatioBadge">---- %</span>
@@ -451,21 +455,25 @@
 
       <!-- その他（自由入力）パネル -->
       <div id="costOtherPanel" class="other-custom-panel">
-        <div style="font-size:11px; color:#fef08a; font-weight:bold;">📝 その他の品名・単価を手入力</div>
+        <div style="font-size:11px; color:#fef08a; font-weight:bold;">📝 その他の品名・金額（単価）を手入力</div>
         <div class="other-input-row">
           <input type="text" id="costOtherName" placeholder="品目名 (例: 変形牙細工)" oninput="calculate()">
-          <input type="number" id="costOtherRate" placeholder="単価(千円)" inputmode="numeric" oninput="calculate()">
+          <input type="number" id="costOtherRate" placeholder="単価(千円/kg)" inputmode="decimal" oninput="calculate()">
         </div>
         <div class="unit-switch-group">
-          <span style="font-size:11px; color:#a1a1aa;">単位:</span>
-          <button type="button" class="unit-switch-btn active" id="costUnitBtnKg" onclick="setCostOtherUnit('kg')">kg</button>
-          <button type="button" class="unit-switch-btn" id="costUnitBtnPcs" onclick="setCostOtherUnit('pcs')">個</button>
+          <span style="font-size:11px; color:#a1a1aa;">入力方式:</span>
+          <button type="button" class="unit-switch-btn active" id="costUnitBtnKg" onclick="setCostOtherUnit('kg')">kg単価</button>
+          <button type="button" class="unit-switch-btn" id="costUnitBtnPcs" onclick="setCostOtherUnit('pcs')">個単価</button>
+          <button type="button" class="unit-switch-btn" id="costUnitBtnFlat" onclick="setCostOtherUnit('flat')">一式(金額直入)</button>
+        </div>
+        <div id="costFlatHint" class="flat-mode-hint" style="display:none;">
+          一式モード：上の金額(千円)がそのまま個別見積りになります（数量入力不要）
         </div>
       </div>
     </div>
 
     <!-- 計量 / 数量 入力 -->
-    <div class="weight-card">
+    <div class="weight-card" id="costWeightCard">
       <div class="section-title" id="inputSectionTitle">はかり計量値</div>
       <div class="weight-box">
         <input type="number" id="amountInput" class="weight-input" placeholder="0" inputmode="decimal" oninput="calculate()">
@@ -486,7 +494,7 @@
 
     <!-- アクションボタン -->
     <div class="action-row">
-      <button class="btn-save-row" onclick="saveToArchive()">スプレッド保管して次へ</button>
+      <button class="btn-save-row" id="btnSaveCost" onclick="saveToArchive()">スプレッド保管して次へ</button>
       <button class="btn-next-only" onclick="clearAmountOnly()">保存せず次へ</button>
     </div>
   </div>
@@ -517,28 +525,34 @@
 
       <!-- その他（自由入力）パネル（下見用） -->
       <div id="estOtherPanel" class="other-custom-panel">
-        <div style="font-size:11px; color:#fef08a; font-weight:bold;">📝 その他の品名・単価を手入力</div>
+        <div style="font-size:11px; color:#fef08a; font-weight:bold;">📝 その他の品名・金額（単価）を手入力</div>
         <div class="other-input-row">
           <input type="text" id="estOtherName" placeholder="品目名 (例: 象牙根付)">
-          <input type="number" id="estOtherRate" placeholder="単価(千円)" inputmode="numeric">
+          <input type="number" id="estOtherRate" placeholder="単価(千円/kg)" inputmode="decimal">
         </div>
         <div class="unit-switch-group">
-          <span style="font-size:11px; color:#a1a1aa;">単位:</span>
-          <button type="button" class="unit-switch-btn active" id="estUnitBtnKg" onclick="setEstOtherUnit('kg')">kg</button>
-          <button type="button" class="unit-switch-btn" id="estUnitBtnPcs" onclick="setEstOtherUnit('pcs')">個</button>
+          <span style="font-size:11px; color:#a1a1aa;">入力方式:</span>
+          <button type="button" class="unit-switch-btn active" id="estUnitBtnKg" onclick="setEstOtherUnit('kg')">kg単価</button>
+          <button type="button" class="unit-switch-btn" id="estUnitBtnPcs" onclick="setEstOtherUnit('pcs')">個単価</button>
+          <button type="button" class="unit-switch-btn" id="estUnitBtnFlat" onclick="setEstOtherUnit('flat')">一式(金額直入)</button>
+        </div>
+        <div id="estFlatHint" class="flat-mode-hint" style="display:none;">
+          一式モード：上の金額(千円)をそのままリストへ追加できます
         </div>
       </div>
     </div>
 
     <!-- 見積数量入力 -->
     <div class="weight-card">
-      <div class="section-title" id="estInputSectionTitle">はかり計量値</div>
-      <div class="weight-box">
-        <input type="number" id="estAmountInput" class="weight-input" placeholder="0" inputmode="decimal">
-        <span class="unit-text" id="estUnitTextBadge">g</span>
-        <button class="btn-inline-clear" onclick="document.getElementById('estAmountInput').value='';">✕</button>
+      <div id="estWeightInputWrap">
+        <div class="section-title" id="estInputSectionTitle">はかり計量値</div>
+        <div class="weight-box" style="margin-bottom:8px;">
+          <input type="number" id="estAmountInput" class="weight-input" placeholder="0" inputmode="decimal">
+          <span class="unit-text" id="estUnitTextBadge">g</span>
+          <button class="btn-inline-clear" onclick="document.getElementById('estAmountInput').value='';">✕</button>
+        </div>
       </div>
-      <button class="btn-action-blue" style="width:100%; margin-top:8px; padding:10px;" onclick="addEstimateItem()">＋ リストに見積追加</button>
+      <button class="btn-action-blue" style="width:100%; padding:10px;" onclick="addEstimateItem()">＋ リストに見積追加</button>
     </div>
 
     <!-- 見積積算リスト & 掛け率計算カード -->
@@ -580,7 +594,7 @@
     <!-- アクションボタン -->
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
       <button class="btn-action-blue" onclick="shareEstimateText()">📤 OS共有メニュー</button>
-      <button class="btn-save-row" onclick="saveEstimateToSheet()">📊 シートへ保存</button>
+      <button class="btn-save-row" id="btnSaveEstimate" onclick="saveEstimateToSheet()">📊 シートへ保存</button>
     </div>
     <button class="btn-next-only" style="padding:10px;" onclick="clearEstimateList()">積算を全クリアして次へ</button>
   </div>
@@ -682,7 +696,7 @@
       <button class="btn-close" onclick="closeMasterModal()">✕</button>
     </div>
     <div style="background:#0a0b0e; border:1px solid #3f3f46; border-radius:10px; padding:12px; margin-bottom:14px;">
-      <div class="setting-title">📊 スプレッドシート連携（組み込み済み）</div>
+      <div class="setting-title">📊 スプレッドシート連携（v2026.11.26-r2）</div>
       <div style="display:flex; gap:6px; align-items:center;">
         <input type="text" id="inputGasUrl" placeholder="GAS WebアプリURL" style="flex:1; background:#181920; border:1px solid #52525b; color:#38bdf8; padding:8px; border-radius:6px; font-size:12px;">
         <button class="btn-header" style="background:#0284c7; border-color:#38bdf8; color:#fff;" onclick="connectAndPullMaster()">手動再取得</button>
@@ -705,7 +719,9 @@
 </div>
 
 <script>
-  // --- キャッシュ無視・自動更新判定 ---
+  // --- バージョン文字列ベースのPWA自動更新判定 ---
+  const APP_VERSION = "2026.11.26-r2";
+
   (function checkPwaUpdate() {
     const lastCheck = sessionStorage.getItem('last_update_check');
     const now = Date.now();
@@ -715,14 +731,14 @@
     fetch(window.location.pathname + '?_t=' + now, { cache: 'no-store' })
       .then(response => response.text())
       .then(html => {
-        const currentLen = document.documentElement.outerHTML.length;
-        const newLen = html.length;
-        if (Math.abs(currentLen - newLen) > 10) {
+        const m = html.match(/<meta\s+name=["']app-version["']\s+content=["']([^"']+)["']/i);
+        const remoteVer = m ? m[1] : null;
+        if (remoteVer && remoteVer !== APP_VERSION) {
           const cleanUrl = new URL(window.location.href);
-          cleanUrl.searchParams.set('v', now);
+          cleanUrl.searchParams.set('v', remoteVer);
           window.location.replace(cleanUrl.toString());
         }
-      }).catch(e => console.log('更新待機:', e));
+      }).catch(e => console.log('更新確認待機:', e));
   })();
 
   function forceAppUpdate() {
@@ -731,6 +747,15 @@
       targetUrl.searchParams.set('reload_time', Date.now());
       window.location.replace(targetUrl.toString());
     }
+  }
+
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   // --- 6桁PIN ---
@@ -764,9 +789,15 @@
     if (enteredPin.length > 0) { enteredPin = enteredPin.slice(0, -1); updatePinDots(); }
   }
 
-  // --- GAS連携情報 & マスタ ---
-  const HARDCODED_GAS_URL = "https://script.google.com/macros/s/AKfycbyRi5dBdk7ip0FoPMP47Nv74Mt_WQvi1_hfRv6E0-WD5WkhgpBH5nO1CMMc5pzly7EKtA/exec";
-  let gasUrl = localStorage.getItem('fushimidou_gas_url') || HARDCODED_GAS_URL;
+  // --- GAS連携情報 & 旧URLからの自動移行 ---
+  const HARDCODED_GAS_URL = "https://script.google.com/macros/s/AKfycbwzUWbf4uABTnk2SypyL1Tm8krzIWf4mBE4ft8HGIcd3yZ8xWZpf3kRZdo8auvNEilv/exec";
+  const LEGACY_GAS_URL = "https://script.google.com/macros/s/AKfycbyRi5dBdk7ip0FoPMP47Nv74Mt_WQvi1_hfRv6E0-WD5WkhgpBH5nO1CMMc5pzly7EKtA/exec";
+  let storedGasUrl = localStorage.getItem('fushimidou_gas_url');
+  if (!storedGasUrl || storedGasUrl === LEGACY_GAS_URL) {
+    storedGasUrl = HARDCODED_GAS_URL;
+    localStorage.setItem('fushimidou_gas_url', HARDCODED_GAS_URL);
+  }
+  let gasUrl = storedGasUrl;
 
   const defaultItems = [
     { name: '象牙バングル大', rate: 250, unit: 'kg' },
@@ -786,11 +817,10 @@
     unit: (item.unit === 'pcs' || item.unit === '個') ? 'pcs' : 'kg'
   }));
 
-  // 現在選択中の品目オブジェクト（isOtherフラグ付き）
-  let selectedItem = items[0] || { name: '', rate: 0, unit: 'kg' };
-  let selectedEstItem = items[0] || { name: '', rate: 0, unit: 'kg' };
+  let selectedItem = items[0] ? { ...items[0], isOther: false } : { name: '', rate: 0, unit: 'kg', isOther: false };
+  let selectedEstItem = items[0] ? { ...items[0], isOther: false } : { name: '', rate: 0, unit: 'kg', isOther: false };
 
-  // 「その他」入力用の一時ステート
+  // 「その他」入力方式（kg / pcs / flat）
   let costOtherUnit = 'kg';
   let estOtherUnit = 'kg';
 
@@ -798,6 +828,12 @@
     costOtherUnit = unit;
     document.getElementById('costUnitBtnKg').classList.toggle('active', unit === 'kg');
     document.getElementById('costUnitBtnPcs').classList.toggle('active', unit === 'pcs');
+    document.getElementById('costUnitBtnFlat').classList.toggle('active', unit === 'flat');
+
+    const rateInput = document.getElementById('costOtherRate');
+    rateInput.placeholder = (unit === 'flat') ? '見積金額(千円)' : (unit === 'pcs' ? '単価(千円/個)' : '単価(千円/kg)');
+    document.getElementById('costFlatHint').style.display = (unit === 'flat') ? 'block' : 'none';
+
     updateInputSectionUI();
     calculate();
   }
@@ -806,13 +842,24 @@
     estOtherUnit = unit;
     document.getElementById('estUnitBtnKg').classList.toggle('active', unit === 'kg');
     document.getElementById('estUnitBtnPcs').classList.toggle('active', unit === 'pcs');
+    document.getElementById('estUnitBtnFlat').classList.toggle('active', unit === 'flat');
+
+    const rateInput = document.getElementById('estOtherRate');
+    rateInput.placeholder = (unit === 'flat') ? '見積金額(千円)' : (unit === 'pcs' ? '単価(千円/個)' : '単価(千円/kg)');
+    document.getElementById('estFlatHint').style.display = (unit === 'flat') ? 'block' : 'none';
+
     updateEstInputSectionUI();
+  }
+
+  function formatEstimateItemAmount(item) {
+    if (item.unit === 'flat') return '一式';
+    return `${Number(item.amount).toLocaleString()}${item.unit === 'pcs' ? '個' : 'g'}`;
   }
 
   // --- JSONP ローダー ---
   function fetchJsonp(url, params = {}) {
     return new Promise((resolve, reject) => {
-      const callbackName = 'gas_cb_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      const callbackName = 'gas_cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
       params.callback = callbackName;
       params.t = Date.now();
 
@@ -893,7 +940,7 @@
   function getRateColor(rate, minRate, maxRate) {
     if (maxRate === minRate) return 'linear-gradient(135deg, #1e293b, #0f172a)';
     const ratio = Math.min(Math.max((rate - minRate) / (maxRate - minRate), 0), 1);
-    const hue = Math.round((1 - ratio) * 220); 
+    const hue = Math.round((1 - ratio) * 220);
     return `linear-gradient(145deg, hsl(${hue}, 65%, 28%) 0%, hsl(${hue}, 70%, 14%) 100%)`;
   }
 
@@ -901,15 +948,19 @@
     const grid = document.getElementById('itemGrid');
     grid.innerHTML = '';
     const rates = items.map(i => i.rate);
-    const minRate = Math.min(...rates), maxRate = Math.max(...rates);
+    const minRate = rates.length ? Math.min(...rates) : 0;
+    const maxRate = rates.length ? Math.max(...rates) : 0;
 
-    // マスタ品目
+    if (!selectedItem.isOther && items.length > 0 && !items.some(i => i.name === selectedItem.name)) {
+      selectedItem = { ...items[0], isOther: false };
+    }
+
     items.forEach((item) => {
       const btn = document.createElement('button');
       btn.className = `item-btn ${(!selectedItem.isOther && item.name === selectedItem.name) ? 'active' : ''}`;
       btn.style.background = getRateColor(item.rate, minRate, maxRate);
       const unitLabel = (item.unit === 'pcs') ? '千円/個' : '千円/kg';
-      btn.innerHTML = `<div class="item-name">${item.name}</div><div class="item-rate">${item.rate} ${unitLabel}</div>`;
+      btn.innerHTML = `<div class="item-name">${escapeHtml(item.name)}</div><div class="item-rate">${item.rate} ${unitLabel}</div>`;
       btn.onclick = () => {
         document.querySelectorAll('#itemGrid .item-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
@@ -921,10 +972,9 @@
       grid.appendChild(btn);
     });
 
-    // 「その他」常設ボタン
     const otherBtn = document.createElement('button');
     otherBtn.className = `item-btn other-btn ${selectedItem.isOther ? 'active' : ''}`;
-    otherBtn.innerHTML = `<div class="item-name">✏️ その他</div><div class="item-rate">自由入力</div>`;
+    otherBtn.innerHTML = `<div class="item-name">✏️ その他</div><div class="item-rate">自由入力 / 一式</div>`;
     otherBtn.onclick = () => {
       document.querySelectorAll('#itemGrid .item-btn').forEach(b => b.classList.remove('active'));
       otherBtn.classList.add('active');
@@ -942,14 +992,19 @@
     const grid = document.getElementById('estItemGrid');
     grid.innerHTML = '';
     const rates = items.map(i => i.rate);
-    const minRate = Math.min(...rates), maxRate = Math.max(...rates);
+    const minRate = rates.length ? Math.min(...rates) : 0;
+    const maxRate = rates.length ? Math.max(...rates) : 0;
+
+    if (!selectedEstItem.isOther && items.length > 0 && !items.some(i => i.name === selectedEstItem.name)) {
+      selectedEstItem = { ...items[0], isOther: false };
+    }
 
     items.forEach((item) => {
       const btn = document.createElement('button');
       btn.className = `item-btn ${(!selectedEstItem.isOther && item.name === selectedEstItem.name) ? 'active' : ''}`;
       btn.style.background = getRateColor(item.rate, minRate, maxRate);
       const unitLabel = (item.unit === 'pcs') ? '千円/個' : '千円/kg';
-      btn.innerHTML = `<div class="item-name">${item.name}</div><div class="item-rate">${item.rate} ${unitLabel}</div>`;
+      btn.innerHTML = `<div class="item-name">${escapeHtml(item.name)}</div><div class="item-rate">${item.rate} ${unitLabel}</div>`;
       btn.onclick = () => {
         document.querySelectorAll('#estItemGrid .item-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
@@ -960,10 +1015,9 @@
       grid.appendChild(btn);
     });
 
-    // 見積用「その他」ボタン
     const otherBtn = document.createElement('button');
     otherBtn.className = `item-btn other-btn ${selectedEstItem.isOther ? 'active' : ''}`;
-    otherBtn.innerHTML = `<div class="item-name">✏️ その他</div><div class="item-rate">自由入力</div>`;
+    otherBtn.innerHTML = `<div class="item-name">✏️ その他</div><div class="item-rate">自由入力 / 一式</div>`;
     otherBtn.onclick = () => {
       document.querySelectorAll('#estItemGrid .item-btn').forEach(b => b.classList.remove('active'));
       otherBtn.classList.add('active');
@@ -977,13 +1031,17 @@
   }
 
   function updateInputSectionUI() {
+    const isFlat = selectedItem.isOther && costOtherUnit === 'flat';
     const isPcs = selectedItem.isOther ? (costOtherUnit === 'pcs') : (selectedItem.unit === 'pcs');
+    document.getElementById('costWeightCard').style.display = isFlat ? 'none' : 'block';
     document.getElementById('inputSectionTitle').textContent = isPcs ? '数量入力' : 'はかり計量値';
     document.getElementById('unitTextBadge').textContent = isPcs ? '個' : 'g';
   }
 
   function updateEstInputSectionUI() {
+    const isFlat = selectedEstItem.isOther && estOtherUnit === 'flat';
     const isPcs = selectedEstItem.isOther ? (estOtherUnit === 'pcs') : (selectedEstItem.unit === 'pcs');
+    document.getElementById('estWeightInputWrap').style.display = isFlat ? 'none' : 'block';
     document.getElementById('estInputSectionTitle').textContent = isPcs ? '見積 数量入力' : '見積 はかり計量値';
     document.getElementById('estUnitTextBadge').textContent = isPcs ? '個' : 'g';
   }
@@ -1058,9 +1116,10 @@
     return Number(numStr).toLocaleString() + " 円";
   }
 
-  // --- 確定原価 計算 ---
+  // --- 確定原価 計算 & 進捗残額リアルタイム連動 ---
   let curCalculatedData = null;
   let activeLoadedLot = null;
+  let currentLotRecords = [];
 
   function calculate() {
     const buyPrice = parseFloat(document.getElementById('buyPrice').value) || 0;
@@ -1080,8 +1139,9 @@
       effUnit = costOtherUnit;
     }
 
+    const isFlat = (effUnit === 'flat');
     const isPcs = (effUnit === 'pcs');
-    const indivEst = isPcs ? (effRate * amountVal) : (effRate * (amountVal / 1000));
+    const indivEst = isFlat ? effRate : (isPcs ? (effRate * amountVal) : (effRate * (amountVal / 1000)));
     const cost = indivEst * ratio;
     const actualYen = Math.round(cost * 1000);
     const cipher = getCipher(actualYen);
@@ -1092,12 +1152,13 @@
     document.getElementById('cipherCode').textContent = cipher;
 
     curCalculatedData = {
+      action: 'saveCostRecord',
       date: new Date().toLocaleString('ja-JP'),
       auction: getActiveVenueName(),
       lotName: document.getElementById('lotName').value.trim() || '未設定',
       itemName: effItemName,
-      unitType: isPcs ? '個' : 'kg',
-      amount: amountVal,
+      unitType: isFlat ? '一式' : (isPcs ? '個' : 'kg'),
+      amount: isFlat ? 1 : amountVal,
       buyPriceYen: Math.round(buyPrice * 1000),
       lotEstimateYen: Math.round(lotEstimate * 1000),
       ratioPercent: (ratio > 0) ? (ratio * 100).toFixed(1) + '%' : '0.0%',
@@ -1106,40 +1167,111 @@
       cipher: cipher,
       lotId: activeLoadedLot ? activeLoadedLot.id : ''
     };
+
+    if (activeLoadedLot) {
+      renderLotProgressStats();
+    }
   }
 
   function clearAmountOnly() {
-    const input = document.getElementById('amountInput');
-    input.value = '';
-    calculate();
-    input.focus();
+    if (selectedItem.isOther && costOtherUnit === 'flat') {
+      document.getElementById('costOtherRate').value = '';
+      document.getElementById('costOtherName').value = '';
+      calculate();
+      document.getElementById('costOtherName').focus();
+    } else {
+      const input = document.getElementById('amountInput');
+      input.value = '';
+      calculate();
+      input.focus();
+    }
   }
 
+  let isSavingCost = false;
   function saveToArchive() {
-    const amountVal = parseFloat(document.getElementById('amountInput').value) || 0;
-    if (amountVal <= 0) {
-      const isPcs = selectedItem.isOther ? (costOtherUnit === 'pcs') : (selectedItem.unit === 'pcs');
-      alert(isPcs ? '数量（個）を入力してください' : '重量（g）を入力してください');
-      return;
+    if (isSavingCost) return;
+
+    const isFlat = selectedItem.isOther && costOtherUnit === 'flat';
+    if (isFlat) {
+      const flatVal = parseFloat(document.getElementById('costOtherRate').value) || 0;
+      if (flatVal <= 0) {
+        alert('見積金額（千円）を入力してください');
+        return;
+      }
+    } else {
+      if (selectedItem.isOther) {
+        const otherRate = parseFloat(document.getElementById('costOtherRate').value) || 0;
+        if (otherRate <= 0) {
+          alert('その他の単価（千円）を入力してください');
+          return;
+        }
+      }
+      const amountVal = parseFloat(document.getElementById('amountInput').value) || 0;
+      if (amountVal <= 0) {
+        const isPcs = selectedItem.isOther ? (costOtherUnit === 'pcs') : (selectedItem.unit === 'pcs');
+        alert(isPcs ? '数量（個）を入力してください' : '重量（g）を入力してください');
+        return;
+      }
     }
+
     calculate();
     if (!gasUrl) { alert('GAS連携URLを設定してください'); return; }
+
+    const payload = {
+      ...curCalculatedData,
+      recordId: 'REC_' + Date.now() + '_' + Math.floor(Math.random() * 10000)
+    };
+
+    isSavingCost = true;
+    const btn = document.getElementById('btnSaveCost');
+    const origLabel = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '保管中...';
 
     fetch(gasUrl, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(curCalculatedData)
+      body: JSON.stringify(payload)
     }).then(() => {
       showToast('スプレッドシートに保管しました');
       clearAmountOnly();
       if (activeLoadedLot) {
         setTimeout(refreshLotProgress, 1200);
       }
-    }).catch(err => alert('送信エラー: ' + err));
+    }).catch(err => {
+      alert('送信エラー: ' + err);
+    }).finally(() => {
+      setTimeout(() => {
+        isSavingCost = false;
+        btn.disabled = false;
+        btn.textContent = origLabel;
+      }, 600);
+    });
   }
 
-  // --- 進捗取得 & 個別削除（やり直し） ---
+  // --- 進捗取得・残額リアルタイム計算・recordId安全削除 ---
+  function renderLotProgressStats() {
+    if (!activeLoadedLot) return;
+    const estCount = activeLoadedLot.items ? activeLoadedLot.items.length : 0;
+    document.getElementById('progCountText').textContent = `${currentLotRecords.length} / ${estCount} 品`;
+
+    let totalCostYen = 0;
+    currentLotRecords.forEach(r => totalCostYen += (Number(r.actualYen) || 0));
+    const totalCostThousand = totalCostYen / 1000;
+    document.getElementById('progCostTotalText').textContent = `${totalCostThousand.toFixed(1)} 千円`;
+
+    const liveBuyInput = parseFloat(document.getElementById('buyPrice').value);
+    const buyPriceThousand = !isNaN(liveBuyInput)
+      ? liveBuyInput
+      : (activeLoadedLot.buyPriceYen ? activeLoadedLot.buyPriceYen / 1000 : 0);
+
+    const remainingThousand = buyPriceThousand - totalCostThousand;
+    const remEl = document.getElementById('progRemainingCostText');
+    remEl.textContent = `${remainingThousand.toFixed(1)} 千円`;
+    remEl.style.color = (remainingThousand < -0.5) ? '#fca5a5' : '#fef08a';
+  }
+
   function refreshLotProgress() {
     if (!activeLoadedLot) return;
     const box = document.getElementById('lotProgressBox');
@@ -1149,55 +1281,58 @@
       .then(res => {
         if (res.status === 'success') {
           box.style.display = 'flex';
-          const records = res.records || [];
-          const estCount = activeLoadedLot.items ? activeLoadedLot.items.length : 0;
-          document.getElementById('progCountText').textContent = `${records.length} / ${estCount} 品`;
-
-          let totalCostYen = 0;
-          records.forEach(r => totalCostYen += r.actualYen);
-          const totalCostThousand = (totalCostYen / 1000).toFixed(1);
-          document.getElementById('progCostTotalText').textContent = `${totalCostThousand} 千円`;
-
-          const buyPriceThousand = activeLoadedLot.buyPriceYen ? (activeLoadedLot.buyPriceYen / 1000) : 0;
-          const remainingThousand = (buyPriceThousand - (totalCostYen / 1000)).toFixed(1);
-          document.getElementById('progRemainingCostText').textContent = `${remainingThousand} 千円`;
+          currentLotRecords = res.records || [];
+          renderLotProgressStats();
 
           list.innerHTML = '';
-          if (records.length === 0) {
+          if (currentLotRecords.length === 0) {
             list.innerHTML = '<div style="color:#71717a; text-align:center;">まだ登録された品目はありません</div>';
             return;
           }
-          records.reverse().forEach(r => {
+          [...currentLotRecords].reverse().forEach(r => {
+            const qtyLabel = (r.unitType === '一式') ? '一式' : `${r.amount}${r.unitType}`;
             const itemDiv = document.createElement('div');
             itemDiv.className = 'progress-record-item';
             itemDiv.innerHTML = `
               <div>
-                <span style="font-weight:bold; color:#fff;">${r.itemName}</span>
-                <span style="color:#94a3b8; font-size:10px;">${r.amount}${r.unitType} / ${(r.actualYen/1000).toFixed(1)}k [${r.cipher}]</span>
+                <span style="font-weight:bold; color:#fff;">${escapeHtml(r.itemName)}</span>
+                <span style="color:#94a3b8; font-size:10px;">${escapeHtml(qtyLabel)} / ${(r.actualYen / 1000).toFixed(1)}k [${escapeHtml(r.cipher)}]</span>
               </div>
-              <button class="btn-record-del" onclick="deleteProgressRecord(${r.rowIndex})">削除</button>
+              <button class="btn-record-del" onclick="deleteProgressRecord('${escapeHtml(r.recordId)}', this)">削除</button>
             `;
             list.appendChild(itemDiv);
           });
         }
-      });
+      }).catch(err => console.log('進捗取得エラー:', err));
   }
 
-  function deleteProgressRecord(rowIndex) {
-    if (!confirm('この行の登録を取り消しますか？\n（スプレッドシートから削除されます）')) return;
+  function deleteProgressRecord(recordId, btnEl) {
+    if (!recordId) return;
+    if (!confirm('この行の登録を取り消しますか？\n（スプレッドシートから安全に削除されます）')) return;
+
+    if (btnEl) {
+      btnEl.disabled = true;
+      btnEl.textContent = '削除中';
+    }
 
     fetch(gasUrl, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
-        action: "deleteCostRecord",
-        rowIndex: rowIndex
+        action: 'deleteCostRecord',
+        recordId: recordId
       })
     }).then(() => {
       showToast('登録を取り消しました');
-      setTimeout(refreshLotProgress, 1000);
-    }).catch(err => alert('削除エラー: ' + err));
+      setTimeout(refreshLotProgress, 1200);
+    }).catch(err => {
+      alert('削除エラー: ' + err);
+      if (btnEl) {
+        btnEl.disabled = false;
+        btnEl.textContent = '削除';
+      }
+    });
   }
 
   function markCurrentLotCompleted() {
@@ -1209,9 +1344,9 @@
       mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
-        action: "updateEstimateStatus",
+        action: 'updateEstimateStatus',
         id: activeLoadedLot.id,
-        status: "完了"
+        status: '完了'
       })
     }).then(() => {
       showToast('山を「完了」に更新しました');
@@ -1219,6 +1354,7 @@
       document.getElementById('costRefDetailsBox').style.display = 'none';
       document.getElementById('lotProgressBox').style.display = 'none';
       activeLoadedLot = null;
+      currentLotRecords = [];
     }).catch(err => alert('更新エラー: ' + err));
   }
 
@@ -1230,29 +1366,20 @@
     currentEstLimitRate = rate;
     document.querySelectorAll('.rate-btn').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
-    
+
     const customInput = document.getElementById('customEstRate');
-    if (rate === null) {
-      customInput.value = '';
-    } else {
-      customInput.value = Math.round(rate * 100);
-    }
+    customInput.value = (rate === null) ? '' : Math.round(rate * 100);
     renderEstimateSummary();
   }
 
   function onCustomRateInput(input) {
     const val = parseFloat(input.value);
     document.querySelectorAll('.rate-btn').forEach(b => b.classList.remove('active'));
-    if (!isNaN(val) && val > 0) {
-      currentEstLimitRate = val / 100;
-    } else {
-      currentEstLimitRate = null;
-    }
+    currentEstLimitRate = (!isNaN(val) && val > 0) ? (val / 100) : null;
     renderEstimateSummary();
   }
 
   function addEstimateItem() {
-    const amount = parseFloat(document.getElementById('estAmountInput').value) || 0;
     let effName = selectedEstItem.name;
     let effRate = selectedEstItem.rate || 0;
     let effUnit = selectedEstItem.unit || 'kg';
@@ -1261,17 +1388,23 @@
       effName = document.getElementById('estOtherName').value.trim() || 'その他';
       effRate = parseFloat(document.getElementById('estOtherRate').value) || 0;
       effUnit = estOtherUnit;
-      if (effRate <= 0) { alert('その他の単価を入力してください'); return; }
+      if (effRate <= 0) {
+        alert(effUnit === 'flat' ? '見積金額（千円）を入力してください' : 'その他の単価（千円）を入力してください');
+        return;
+      }
     }
 
-    if (amount <= 0) {
+    const isFlat = (effUnit === 'flat');
+    const amount = isFlat ? 1 : (parseFloat(document.getElementById('estAmountInput').value) || 0);
+    if (!isFlat && amount <= 0) {
       alert(effUnit === 'pcs' ? '数量（個）を入力してください' : '重量（g）を入力してください');
       return;
     }
 
-    const isPcs = (effUnit === 'pcs');
-    const subtotalThousand = isPcs ? (effRate * amount) : (effRate * (amount / 1000));
-    
+    const subtotalThousand = isFlat
+      ? effRate
+      : (effUnit === 'pcs' ? (effRate * amount) : (effRate * (amount / 1000)));
+
     estimateItems.push({
       itemName: effName,
       unit: effUnit,
@@ -1281,6 +1414,10 @@
     });
 
     document.getElementById('estAmountInput').value = '';
+    if (selectedEstItem.isOther) {
+      document.getElementById('estOtherName').value = '';
+      document.getElementById('estOtherRate').value = '';
+    }
     renderEstimateSummary();
   }
 
@@ -1289,10 +1426,13 @@
     renderEstimateSummary();
   }
 
-  function clearEstimateList() {
-    if (estimateItems.length > 0 && !confirm('見積もり積算リストを全クリアしますか？')) return;
+  function clearEstimateList(skipConfirm = false) {
+    if (!skipConfirm && estimateItems.length > 0 && !confirm('見積もり積算リストを全クリアしますか？')) return;
     estimateItems = [];
     document.getElementById('estLotName').value = '';
+    document.getElementById('estAmountInput').value = '';
+    document.getElementById('estOtherName').value = '';
+    document.getElementById('estOtherRate').value = '';
     renderEstimateSummary();
   }
 
@@ -1303,11 +1443,10 @@
 
     estimateItems.forEach((item, idx) => {
       totalThousand += item.subtotalThousand;
-      const unitStr = (item.unit === 'pcs') ? '個' : 'g';
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${item.itemName}</td>
-        <td>${item.amount.toLocaleString()} ${unitStr}</td>
+        <td>${escapeHtml(item.itemName)}</td>
+        <td>${escapeHtml(formatEstimateItemAmount(item))}</td>
         <td style="text-align:right; font-weight:bold; color:#38bdf8;">${item.subtotalThousand.toFixed(1)}k</td>
         <td style="text-align:right;"><button class="btn-row-remove" onclick="removeEstimateItem(${idx})">✕</button></td>
       `;
@@ -1339,13 +1478,12 @@
     text += `会場: ${venue}\n日時: ${nowStr}\n`;
     text += `----------------------------\n`;
     estimateItems.forEach(i => {
-      const u = (i.unit === 'pcs') ? '個' : 'g';
-      text += `・${i.itemName}: ${i.amount.toLocaleString()}${u} (${i.subtotalThousand.toFixed(1)}千円)\n`;
+      text += `・${i.itemName}: ${formatEstimateItemAmount(i)} (${i.subtotalThousand.toFixed(1)}千円)\n`;
     });
     text += `----------------------------\n`;
     text += `合計点数: ${estimateItems.length}品\n`;
     text += `見積総額: ${totalThousand.toFixed(1)} 千円 (${Math.round(totalThousand * 1000).toLocaleString()} 円)\n`;
-    
+
     if (currentEstLimitRate !== null) {
       let limitThousand = totalThousand * currentEstLimitRate;
       text += `入札上限(${Math.round(currentEstLimitRate * 100)}%目安): ${limitThousand.toFixed(1)} 千円 (${Math.round(limitThousand * 1000).toLocaleString()} 円)\n`;
@@ -1363,19 +1501,30 @@
     }
   }
 
+  let isSavingEstimate = false;
   function saveEstimateToSheet() {
+    if (isSavingEstimate) return;
     if (estimateItems.length === 0) { alert('品目が登録されていません'); return; }
+    if (!gasUrl) { alert('GAS連携URLを設定してください'); return; }
+
     const lotName = document.getElementById('estLotName').value.trim() || '未設定山';
-    let totalThousand = estimateItems.reduce((acc, i) => acc + i.subtotalThousand, 0);
+    const totalThousand = estimateItems.reduce((acc, i) => acc + i.subtotalThousand, 0);
 
     const payload = {
-      action: "saveEstimate",
+      action: 'saveEstimate',
+      id: 'EST_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
       date: new Date().toLocaleString('ja-JP'),
       auction: getActiveEstVenueName(),
       lotName: lotName,
       totalEstYen: Math.round(totalThousand * 1000),
-      items: estimateItems
+      items: [...estimateItems]
     };
+
+    isSavingEstimate = true;
+    const btn = document.getElementById('btnSaveEstimate');
+    const origLabel = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '保管中...';
 
     fetch(gasUrl, {
       method: 'POST',
@@ -1383,9 +1532,21 @@
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payload)
     }).then(() => {
-      showToast('スプレッドシートに見積もりを保管しました');
-      switchAppMode('estList');
-    }).catch(err => alert('保存エラー: ' + err));
+      clearEstimateList(true);
+      showToast('スプレッドシートへ保管中...');
+      setTimeout(() => {
+        isSavingEstimate = false;
+        btn.disabled = false;
+        btn.textContent = origLabel;
+        showToast('見積もりを保管しました');
+        switchAppMode('estList');
+      }, 1300);
+    }).catch(err => {
+      isSavingEstimate = false;
+      btn.disabled = false;
+      btn.textContent = origLabel;
+      alert('保存エラー: ' + err);
+    });
   }
 
   // --- 見積一覧・落札可否 & 責任者クローズ管理 ---
@@ -1403,7 +1564,7 @@
           renderEstimatesCards();
           if (showNotice) showToast('見積一覧を更新しました');
         }
-      }).catch(err => { container.innerHTML = '取得失敗: ' + err.message; });
+      }).catch(err => { container.innerHTML = '取得失敗: ' + escapeHtml(err.message); });
   }
 
   function renderEstimatesCards() {
@@ -1417,7 +1578,7 @@
     loadedEstimates.forEach((est) => {
       const card = document.createElement('div');
       card.className = 'estimate-card';
-      
+
       let badgeClass = 'wait';
       let statusText = '下見中';
       if (est.status === '落札') { badgeClass = 'won'; statusText = '落札 ✅'; }
@@ -1425,22 +1586,33 @@
       else if (est.status === '完了') { badgeClass = 'done'; statusText = '完了 🏁'; }
 
       const buyPriceThousand = (est.buyPriceYen > 0) ? (est.buyPriceYen / 1000).toFixed(1) : '';
+      const safeId = escapeHtml(est.id);
 
       let managerControls = '';
       if (est.status === '完了') {
         managerControls = `
           <div class="manager-action-row">
-            <button class="btn-mgr-rollback" onclick="updateLotStatus('${est.id}', '落札')">↩️ 落札に戻す(店舗へ再送)</button>
-            <button class="btn-mgr-archive" onclick="archiveEstimateLot('${est.id}')">🗑️ 一覧から削除(クローズ)</button>
+            <button class="btn-mgr-rollback" onclick="updateLotStatus('${safeId}', '落札')">↩️ 落札に戻す(店舗へ再送)</button>
+            <button class="btn-mgr-archive" onclick="archiveEstimateLot('${safeId}')">🗑️ 一覧から削除(クローズ)</button>
+          </div>
+        `;
+      } else if (est.status === '不落') {
+        managerControls = `
+          <div class="manager-action-row">
+            <button class="btn-mgr-archive" onclick="archiveEstimateLot('${safeId}')">🗑️ 不落を一覧から削除(クローズ)</button>
           </div>
         `;
       }
 
+      const detailsHtml = (est.items || []).map(i =>
+        `<div>・${escapeHtml(i.itemName)}: ${escapeHtml(formatEstimateItemAmount(i))} (${Number(i.subtotalThousand).toFixed(1)}k)</div>`
+      ).join('');
+
       card.innerHTML = `
         <div class="est-card-head">
           <div>
-            <div class="est-card-title">${est.lotName} <span style="font-size:11px; color:#94a3b8;">(${est.auction})</span></div>
-            <div class="est-card-date">📅 ${est.date || '日時未記録'}</div>
+            <div class="est-card-title">${escapeHtml(est.lotName)} <span style="font-size:11px; color:#94a3b8;">(${escapeHtml(est.auction)})</span></div>
+            <div class="est-card-date">📅 ${escapeHtml(est.date || '日時未記録')}</div>
           </div>
           <span class="status-badge ${badgeClass}">${statusText}</span>
         </div>
@@ -1449,15 +1621,15 @@
           <span style="font-weight:bold; color:#38bdf8;">${(est.totalEstYen / 1000).toFixed(1)} 千円</span>
         </div>
         <div style="display:flex; gap:6px; align-items:center; margin-top:4px;">
-          <input type="number" id="cardBuyPrice_${est.id}" placeholder="落札額(千円)" value="${buyPriceThousand}" style="flex:1; background:#0a0b0e; border:1px solid #3f3f46; color:#fef08a; padding:6px; border-radius:6px; font-size:13px; text-align:right;">
-          <button class="venue-btn ${est.status === '落札' ? 'active' : ''}" style="width:70px; padding:6px 0;" onclick="updateLotStatus('${est.id}', '落札')">落札</button>
-          <button class="venue-btn ${est.status === '不落' ? 'active' : ''}" style="width:60px; padding:6px 0;" onclick="updateLotStatus('${est.id}', '不落')">不落</button>
+          <input type="number" id="cardBuyPrice_${safeId}" placeholder="落札額(千円)" value="${buyPriceThousand}" inputmode="decimal" style="flex:1; background:#0a0b0e; border:1px solid #3f3f46; color:#fef08a; padding:6px; border-radius:6px; font-size:13px; text-align:right;">
+          <button class="venue-btn ${est.status === '落札' ? 'active' : ''}" style="width:70px; padding:6px 0;" onclick="updateLotStatus('${safeId}', '落札')">落札</button>
+          <button class="venue-btn ${est.status === '不落' ? 'active' : ''}" style="width:60px; padding:6px 0;" onclick="updateLotStatus('${safeId}', '不落')">不落</button>
         </div>
-        <div style="font-size:11px; color:#38bdf8; cursor:pointer; margin-top:2px;" onclick="toggleCardDetail('${est.id}')">
+        <div style="font-size:11px; color:#38bdf8; cursor:pointer; margin-top:2px;" onclick="toggleCardDetail('${safeId}')">
           ▼ 内訳明細を見る (${est.items ? est.items.length : 0}品)
         </div>
-        <div id="cardDetails_${est.id}" style="display:none; background:#0a0b0e; padding:6px; border-radius:6px; font-size:11px; margin-top:4px;">
-          ${(est.items || []).map(i => `<div>・${i.itemName}: ${i.amount}${i.unit === 'pcs' ? '個' : 'g'} (${i.subtotalThousand.toFixed(1)}k)</div>`).join('')}
+        <div id="cardDetails_${safeId}" style="display:none; background:#0a0b0e; padding:6px; border-radius:6px; font-size:11px; margin-top:4px;">
+          ${detailsHtml || '<div style="color:#71717a;">内訳データなし</div>'}
         </div>
         ${managerControls}
       `;
@@ -1467,11 +1639,12 @@
 
   function toggleCardDetail(id) {
     const el = document.getElementById(`cardDetails_${id}`);
-    el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+    if (el) el.style.display = (el.style.display === 'none') ? 'block' : 'none';
   }
 
   function updateLotStatus(id, newStatus) {
-    const inputVal = parseFloat(document.getElementById(`cardBuyPrice_${id}`).value) || 0;
+    const inputEl = document.getElementById(`cardBuyPrice_${id}`);
+    const inputVal = inputEl ? (parseFloat(inputEl.value) || 0) : 0;
     const buyPriceYen = Math.round(inputVal * 1000);
 
     fetch(gasUrl, {
@@ -1479,7 +1652,7 @@
       mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
-        action: "updateEstimateStatus",
+        action: 'updateEstimateStatus',
         id: id,
         status: newStatus,
         buyPriceYen: buyPriceYen
@@ -1496,16 +1669,16 @@
   }
 
   function archiveEstimateLot(id) {
-    if (!confirm('この山を完了として一覧から削除（クローズ）しますか？\n（スプレッドシートの履歴データは安全に保管されます）')) return;
+    if (!confirm('この山を一覧から削除（クローズ）しますか？\n（スプレッドシートの履歴データは安全に保管されます）')) return;
 
     fetch(gasUrl, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
-        action: "updateEstimateStatus",
+        action: 'updateEstimateStatus',
         id: id,
-        status: "削除"
+        status: '削除'
       })
     }).then(() => {
       showToast('山をクローズしました');
@@ -1536,8 +1709,8 @@
             div.style.border = '1px solid #0284c7';
             div.innerHTML = `
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div style="font-weight:bold; color:#fef08a; font-size:15px;">${lot.lotName} (${lot.auction})</div>
-                <div style="font-size:10px; color:#94a3b8;">📅 ${lot.date || ''}</div>
+                <div style="font-weight:bold; color:#fef08a; font-size:15px;">${escapeHtml(lot.lotName)} (${escapeHtml(lot.auction)})</div>
+                <div style="font-size:10px; color:#94a3b8;">📅 ${escapeHtml(lot.date || '')}</div>
               </div>
               <div style="font-size:12px; color:#cbd5e1; margin-top:4px;">
                 全体見積: ${(lot.totalEstYen / 1000).toFixed(1)}千円 ｜ 落札額: ${(lot.buyPriceYen / 1000).toFixed(1)}千円
@@ -1548,7 +1721,7 @@
           });
         }
       }).catch(err => {
-        container.innerHTML = '取得失敗: ' + err.message;
+        container.innerHTML = '取得失敗: ' + escapeHtml(err.message);
       });
   }
 
@@ -1556,8 +1729,9 @@
 
   function selectWonLotToCostMode(lot) {
     activeLoadedLot = lot;
+    currentLotRecords = [];
 
-    const venueBtns = document.querySelectorAll('.lot-card .venue-btn');
+    const venueBtns = document.querySelectorAll('#modeCostView .venue-btn');
     let matched = false;
     venueBtns.forEach(b => {
       if (b.textContent === lot.auction) {
@@ -1572,9 +1746,7 @@
 
     document.getElementById('lotName').value = lot.lotName;
     document.getElementById('lotEstimate').value = (lot.totalEstYen / 1000).toFixed(1);
-    if (lot.buyPriceYen > 0) {
-      document.getElementById('buyPrice').value = (lot.buyPriceYen / 1000).toFixed(1);
-    }
+    document.getElementById('buyPrice').value = (lot.buyPriceYen > 0) ? (lot.buyPriceYen / 1000).toFixed(1) : '';
 
     const statusBar = document.getElementById('loadedLotStatusBar');
     document.getElementById('loadedLotStatusText').textContent = `呼出中: ${lot.lotName} (${lot.date || ''})`;
@@ -1582,10 +1754,15 @@
 
     const box = document.getElementById('costRefDetailsBox');
     const list = document.getElementById('costRefList');
+    const arrow = document.getElementById('refToggleArrow');
     if (lot.items && lot.items.length > 0) {
       box.style.display = 'block';
+      list.style.display = 'none';
+      arrow.textContent = '▼';
       document.getElementById('refItemCount').textContent = lot.items.length;
-      list.innerHTML = lot.items.map(i => `<div>・${i.itemName}: ${i.amount}${i.unit === 'pcs' ? '個' : 'g'} (${i.subtotalThousand.toFixed(1)}k)</div>`).join('');
+      list.innerHTML = lot.items.map(i =>
+        `<div>・${escapeHtml(i.itemName)}: ${escapeHtml(formatEstimateItemAmount(i))} (${Number(i.subtotalThousand).toFixed(1)}k)</div>`
+      ).join('');
     } else {
       box.style.display = 'none';
     }
@@ -1599,7 +1776,7 @@
   function toggleCostRefList() {
     const list = document.getElementById('costRefList');
     const arrow = document.getElementById('refToggleArrow');
-    if (list.style.display === 'none') {
+    if (list.style.display === 'none' || !list.style.display) {
       list.style.display = 'flex';
       arrow.textContent = '▲';
     } else {
@@ -1658,6 +1835,7 @@
           localStorage.setItem('app_master_items', JSON.stringify(items));
           localStorage.setItem('fushimidou_last_sync', Date.now());
           renderGrid();
+          if (currentAppMode === 'estCalc') renderEstGrid();
           if (badge) {
             badge.textContent = '同期完了 ✓';
             setTimeout(updateSyncDisplay, 1500);
@@ -1689,12 +1867,12 @@
     const isPcs = (unit === 'pcs' || unit === '個');
     div.innerHTML = `
       <div class="drag-handle">☰</div>
-      <input type="text" class="name" placeholder="品目名" value="${name}">
+      <input type="text" class="name" placeholder="品目名" value="${escapeHtml(name)}">
       <select class="unit">
         <option value="kg" ${!isPcs ? 'selected' : ''}>kg</option>
         <option value="pcs" ${isPcs ? 'selected' : ''}>個</option>
       </select>
-      <input type="number" class="rate" placeholder="単価" value="${rate}">
+      <input type="number" class="rate" placeholder="単価" value="${escapeHtml(rate)}">
       <button class="btn-del" onclick="this.parentElement.remove()">✕</button>
     `;
     return div;
@@ -1743,7 +1921,7 @@
         method: 'POST',
         mode: 'no-cors',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: "updateMaster", items: newItems })
+        body: JSON.stringify({ action: 'updateMaster', items: newItems })
       }).then(() => showToast('マスタを更新しました'));
     }
     closeMasterModal();
