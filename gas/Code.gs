@@ -118,7 +118,7 @@ function apply_(s,e){
 }
 function read_(s,p,role){
   switch(p.action){
-    case 'getMaster':return {items:s.master||[],initialized:s.master!==null,revision:s.masterRevision,role};
+    case 'getMaster':return {items:s.master||[],initialized:s.master!==null,revision:s.masterRevision,role,protocol:'fushimidou-r3',version:FS.version};
     case 'getEstimates':return {estimates:Array.from(s.est.values()),role};
     case 'getLotProgress':return {records:Array.from(s.cost.values()).filter(r=>!r.deleted&&r.lotId===String(p.lotId||'')),role};
     case 'getOperation':{
