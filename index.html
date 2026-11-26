@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="伏見堂 原価符牒">
-  <meta name="app-version" content="2026.11.26-r2">
+  <meta name="app-version" content="2026.11.27-r3">
 
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -359,6 +359,9 @@
 </div>
 
 <div class="container">
+  <div id="pendingNotice" style="display:none;background:#422006;padding:10px;border:1px solid #f59e0b;border-radius:8px;font-size:12px;">
+    <div id="pendingLabel"></div><button class="btn-header" onclick="recheckPending()">結果を再確認</button> <button class="btn-header" onclick="exportPending()">送信内容を保存</button>
+  </div>
   <!-- ヘッダー -->
   <div class="header-bar">
     <div class="logo-group">
@@ -696,7 +699,7 @@
       <button class="btn-close" onclick="closeMasterModal()">✕</button>
     </div>
     <div style="background:#0a0b0e; border:1px solid #3f3f46; border-radius:10px; padding:12px; margin-bottom:14px;">
-      <div class="setting-title">📊 スプレッドシート連携（v2026.11.26-r2）</div>
+      <div class="setting-title">📊 スプレッドシート連携（v2026.11.27-r3）</div>
       <div style="display:flex; gap:6px; align-items:center;">
         <input type="text" id="inputGasUrl" placeholder="GAS WebアプリURL" style="flex:1; background:#181920; border:1px solid #52525b; color:#38bdf8; padding:8px; border-radius:6px; font-size:12px;">
         <button class="btn-header" style="background:#0284c7; border-color:#38bdf8; color:#fff;" onclick="connectAndPullMaster()">手動再取得</button>
@@ -720,7 +723,7 @@
 
 <script>
   // --- バージョン文字列ベースのPWA自動更新判定 ---
-  const APP_VERSION = "2026.11.26-r2";
+  const APP_VERSION = "2026.11.27-r3";
 
   (function checkPwaUpdate() {
     const lastCheck = sessionStorage.getItem('last_update_check');
@@ -742,6 +745,8 @@
   })();
 
   function forceAppUpdate() {
+    if(writeBusy||pendingWrite){alert('送信結果を確認してから更新してください');return;}
+    saveEstimateDraft();
     if (confirm('最新のプログラムを再読み込みしますか？')) {
       const targetUrl = new URL(window.location.href);
       targetUrl.searchParams.set('reload_time', Date.now());
@@ -777,6 +782,7 @@
       setTimeout(() => {
         if (enteredPin === currentPin) {
           document.getElementById('lockScreen').style.display = 'none';
+          syncMasterFromSheetSilently();
         } else {
           alert('暗証番号が正しくありません');
           clearPin();
@@ -810,7 +816,8 @@
     { name: 'コツネリ', rate: 3, unit: 'kg' }
   ];
 
-  let rawItems = JSON.parse(localStorage.getItem('app_master_items')) || defaultItems;
+  let rawItems = readLocal('app_master_items', defaultItems);
+  if (!Array.isArray(rawItems) || !rawItems.length || rawItems.some(i => !i || typeof i.name !== 'string' || !Number.isFinite(Number(i.rate)) || Number(i.rate)<=0)) rawItems = defaultItems;
   let items = rawItems.map(item => ({
     name: item.name,
     rate: Number(item.rate),
@@ -856,32 +863,107 @@
     return `${Number(item.amount).toLocaleString()}${item.unit === 'pcs' ? '個' : 'g'}`;
   }
 
+  function readLocal(key, fallback) {
+    try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch (_) { return fallback; }
+  }
+  function validGasUrl(value) {
+    try { const u = new URL(value); return u.origin === 'https://script.google.com' && /^\/macros\/s\/[\w-]+\/exec$/.test(u.pathname) && !u.search && !u.hash; } catch (_) { return false; }
+  }
+  const $ = id => document.getElementById(id);
+  const positive = x => Number.isFinite(Number(x)) && Number(x)>0;
+  const uniqueId = prefix => prefix + '_' + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '_' + Math.random().toString(36).slice(2));
+  let pendingWrite = readLocal('fushimidou_pending_r3', null);
+  let writeBusy = false;
+  function updatePendingUI() {
+    $('pendingNotice').style.display = pendingWrite ? 'block' : 'none';
+    $('pendingLabel').textContent = pendingWrite ? '未確認: ' + pendingWrite.payload.action + ' / ' + (pendingWrite.payload.recordId || pendingWrite.payload.id || '') : '';
+  }
+  function setPending(value) {
+    if (value) localStorage.setItem('fushimidou_pending_r3', JSON.stringify(value));
+    else localStorage.removeItem('fushimidou_pending_r3');
+    pendingWrite = value; updatePendingUI();
+  }
+  async function readAction(url, action, params={}) {
+    const r = await fetchJsonp(url, {action, ...params});
+    if (!r || r.status !== 'success') throw Error(r?.message || 'サーバーから正常応答がありません');
+    return r;
+  }
+  const normMaster = rows => rows.map(i=>({name:String(i.name).trim(), rate:Number(i.rate), unit:i.unit==='pcs'||i.unit==='個'?'pcs':'kg'}));
+  async function verifyWrite(p) {
+    const x=p.payload, url=p.url;
+    if(x.action==='saveCostRecord' || x.action==='deleteCostRecord') {
+      const r=await readAction(url,'getLotProgress',{lotId:p.lotId||x.lotId||''});
+      if(!Array.isArray(r.records)) throw Error('原価一覧応答が不正');
+      const row=r.records.find(i=>String(i.recordId)===String(x.recordId));
+      return x.action==='deleteCostRecord' ? !row : !!row && Number(row.actualYen)===Number(x.actualYen);
+    }
+    if(x.action==='updateMaster') {
+      const r=await readAction(url,'getMaster');
+      return Array.isArray(r.items) && JSON.stringify(normMaster(r.items))===JSON.stringify(normMaster(x.items));
+    }
+    const r=await readAction(url,'getEstimates');
+    if(!Array.isArray(r.estimates)) throw Error('見積一覧応答が不正');
+    const row=r.estimates.find(i=>String(i.id)===String(x.id));
+    if(x.action==='saveEstimate') return !!row && Number(row.totalEstYen)===Number(x.totalEstYen);
+    return !!row && row.status===x.status && (x.buyPriceYen===undefined || Number(row.buyPriceYen)===Number(x.buyPriceYen));
+  }
+  async function waitForWrite(p) {
+    for(let i=0;i<3;i++) {
+      try { if(await verifyWrite(p)) return true; } catch(e) { console.warn(e); }
+      if(i<2) await new Promise(r=>setTimeout(r,900));
+    }
+    return false;
+  }
+  async function confirmedWrite(payload, lotId='') {
+    if(writeBusy || pendingWrite) { alert('前の送信結果を確認してください。'); return false; }
+    if(!validGasUrl(gasUrl)) { alert('GAS URLを確認してください'); return false; }
+    writeBusy=true;
+    try {
+      const p={payload,url:gasUrl,lotId};
+      setPending(p);
+      const controller=new AbortController();
+      const timer=setTimeout(()=>controller.abort(),15000);
+      try { await fetch(p.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload),signal:controller.signal}); }
+      catch(e) { console.warn('送信結果不明',e); }
+      finally { clearTimeout(timer); }
+      if(await waitForWrite(p)) { setPending(null); return true; }
+      alert('保存結果を確認できません。再送せず、上部の「結果を再確認」を押してください。');
+      return false;
+    } catch(e) { alert('処理できません: '+e.message); return false; }
+    finally { writeBusy=false; }
+  }
+  async function recheckPending() {
+    if(!pendingWrite || writeBusy) return;
+    writeBusy=true;
+    try {
+      const p=pendingWrite;
+      if(!await waitForWrite(p)) { alert('まだ確認できません。再送せずシートの該当IDを確認してください。'); return; }
+      setPending(null);
+      showToast('登録結果を確認しました');
+      if(p.payload.action==='saveCostRecord' || p.payload.action==='saveEstimate') alert('登録済みです。重複を防ぐため、該当入力を確認してから次へ進んでください。');
+      if(activeLoadedLot) refreshLotProgress();
+      if(currentAppMode==='estList') fetchEstimatesList();
+      if(p.payload.action==='updateMaster') syncMasterFromSheetSilently(true);
+    } finally {writeBusy=false;}
+  }
+  function exportPending() {
+    if(!pendingWrite) return;
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(pendingWrite,null,2)],{type:'application/json'})); a.download='pending-operation.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  }
+
   // --- JSONP ローダー ---
   function fetchJsonp(url, params = {}) {
-    return new Promise((resolve, reject) => {
-      const callbackName = 'gas_cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
-      params.callback = callbackName;
-      params.t = Date.now();
-
-      const queryString = Object.keys(params).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k])).join('&');
-      const scriptUrl = url + (url.includes('?') ? '&' : '?') + queryString;
-
-      const script = document.createElement('script');
-      script.src = scriptUrl;
-
-      window[callbackName] = function(data) {
-        resolve(data);
-        delete window[callbackName];
-        if (script.parentNode) script.parentNode.removeChild(script);
-      };
-
-      script.onerror = function() {
-        reject(new Error('通信に失敗しました。'));
-        delete window[callbackName];
-        if (script.parentNode) script.parentNode.removeChild(script);
-      };
-
-      document.body.appendChild(script);
+    return new Promise((resolve,reject)=>{
+      if(!validGasUrl(url)) { reject(Error('GAS URLが不正です')); return; }
+      const callbackName='gas_cb_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+      const target=new URL(url); Object.entries({...params,callback:callbackName,t:Date.now()}).forEach(([k,v])=>target.searchParams.set(k,String(v)));
+      const script=document.createElement('script');
+      let done=false;
+      const finish=(err,data)=>{if(done)return;done=true;clearTimeout(timer);delete window[callbackName];script.remove();err?reject(err):resolve(data);};
+      const timer=setTimeout(()=>finish(Error('通信タイムアウト')),10000);
+      window[callbackName]=data=>finish(null,data);
+      script.onerror=()=>finish(Error('通信に失敗しました'));
+      script.src=target.href;document.body.appendChild(script);
     });
   }
 
@@ -951,8 +1033,9 @@
     const minRate = rates.length ? Math.min(...rates) : 0;
     const maxRate = rates.length ? Math.max(...rates) : 0;
 
-    if (!selectedItem.isOther && items.length > 0 && !items.some(i => i.name === selectedItem.name)) {
-      selectedItem = { ...items[0], isOther: false };
+    if (!selectedItem.isOther) {
+      const match=items.find(i=>i.name===selectedItem.name);
+      selectedItem = {...(match || items[0] || {name:'',rate:0,unit:'kg'}),isOther:false};
     }
 
     items.forEach((item) => {
@@ -995,8 +1078,9 @@
     const minRate = rates.length ? Math.min(...rates) : 0;
     const maxRate = rates.length ? Math.max(...rates) : 0;
 
-    if (!selectedEstItem.isOther && items.length > 0 && !items.some(i => i.name === selectedEstItem.name)) {
-      selectedEstItem = { ...items[0], isOther: false };
+    if (!selectedEstItem.isOther) {
+      const match=items.find(i=>i.name===selectedEstItem.name);
+      selectedEstItem = {...(match || items[0] || {name:'',rate:0,unit:'kg'}),isOther:false};
     }
 
     items.forEach((item) => {
@@ -1073,7 +1157,7 @@
     return prefix + res.join("");
   }
 
-  function getCipher(priceYen) {
+  function getLegacyCipher(priceYen) {
     if (!priceYen || priceYen < 1000) return "----";
     let num = Math.floor(priceYen);
     let raw = buildRawCipher(num);
@@ -1089,6 +1173,34 @@
     let code = raw.slice(0, 4);
     if (code.length === 4 && code.endsWith("チ")) code = code.slice(0, 3);
     return code;
+  }
+
+  // Preserve legacy decoding; new codes select the smallest representable amount >= input.
+  let cipherCandidates;
+  function getCipher(priceYen) {
+    const n=Math.ceil(Number(priceYen));
+    if(!Number.isSafeInteger(n) || n<1000 || n>9999999) return '----';
+    if(!cipherCandidates) {
+      const codes=new Map(), alphabet=Object.keys(revMap).concat('オ');
+      for(const prefix of Object.keys(prefixDigitLen)) {
+        const walk=(body,depth)=>{
+          if(body && body[0]!=='オ') {
+            const code=prefix+body, value=Number(decodeCipher(code).replace(/[^0-9]/g,''));
+            if(value>=10**(prefixDigitLen[prefix]-1) && value<10**prefixDigitLen[prefix]) {
+              const old=codes.get(value);
+              if(!old || code.length<old.length) codes.set(value,code);
+            }
+          }
+          if(depth<3) for(const c of alphabet) walk(body+c,depth+1);
+        }; walk('',0);
+      }
+      cipherCandidates=[...codes].sort((a,b)=>a[0]-b[0]);
+    }
+    let lo=0,hi=cipherCandidates.length;
+    while(lo<hi){const m=(lo+hi)>>1;if(cipherCandidates[m][0]<n)lo=m+1;else hi=m;}
+    const hit=cipherCandidates[lo]; if(!hit)return '----';
+    const legacy=getLegacyCipher(n);
+    return Number(decodeCipher(legacy).replace(/[^0-9]/g,''))===hit[0] ? legacy : hit[1];
   }
 
   function decodeCipher(cipherStr) {
@@ -1188,66 +1300,24 @@
   }
 
   let isSavingCost = false;
-  function saveToArchive() {
-    if (isSavingCost) return;
-
-    const isFlat = selectedItem.isOther && costOtherUnit === 'flat';
-    if (isFlat) {
-      const flatVal = parseFloat(document.getElementById('costOtherRate').value) || 0;
-      if (flatVal <= 0) {
-        alert('見積金額（千円）を入力してください');
-        return;
-      }
-    } else {
-      if (selectedItem.isOther) {
-        const otherRate = parseFloat(document.getElementById('costOtherRate').value) || 0;
-        if (otherRate <= 0) {
-          alert('その他の単価（千円）を入力してください');
-          return;
-        }
-      }
-      const amountVal = parseFloat(document.getElementById('amountInput').value) || 0;
-      if (amountVal <= 0) {
-        const isPcs = selectedItem.isOther ? (costOtherUnit === 'pcs') : (selectedItem.unit === 'pcs');
-        alert(isPcs ? '数量（個）を入力してください' : '重量（g）を入力してください');
-        return;
-      }
-    }
-
+  async function saveToArchive() {
+    if(isSavingCost || pendingWrite || writeBusy) { if(pendingWrite) alert('前回の登録結果を確認してください'); return; }
     calculate();
-    if (!gasUrl) { alert('GAS連携URLを設定してください'); return; }
-
-    const payload = {
-      ...curCalculatedData,
-      recordId: 'REC_' + Date.now() + '_' + Math.floor(Math.random() * 10000)
-    };
-
-    isSavingCost = true;
-    const btn = document.getElementById('btnSaveCost');
-    const origLabel = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = '保管中...';
-
-    fetch(gasUrl, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
-    }).then(() => {
-      showToast('スプレッドシートに保管しました');
-      clearAmountOnly();
-      if (activeLoadedLot) {
-        setTimeout(refreshLotProgress, 1200);
+    const d=curCalculatedData;
+    if(!positive(d.buyPriceYen)||!positive(d.lotEstimateYen)||!positive(d.indivEstYen)||!positive(d.actualYen)||!Number.isSafeInteger(d.actualYen)||!positive(d.amount)||d.lotName==='未設定'||(d.unitType==='個'&&!Number.isInteger(d.amount))) {alert('山名・買値・全体見積・単価・数量を正しく入力してください');return;}
+    if(d.actualYen>=10000000){alert('符牒の対応金額範囲を超えています');return;}
+    if(activeLoadedLot && (d.lotName!==activeLoadedLot.lotName || d.auction!==activeLoadedLot.auction || d.buyPriceYen!==Number(activeLoadedLot.buyPriceYen) || d.lotEstimateYen!==Number(activeLoadedLot.totalEstYen))) { alert('呼出元の山と入力が一致しません。再度呼び出してください。');return; }
+    const btn=$('btnSaveCost'), label=btn.textContent;
+    isSavingCost=true;btn.disabled=true;btn.textContent='保管確認中...';
+    const snapshot=JSON.stringify(d);
+    try {
+      if(await confirmedWrite({...d,recordId:uniqueId('REC')},d.lotId)){
+        showToast('スプレッドシートに保管しました');
+        calculate();
+        if(JSON.stringify({...curCalculatedData,date:d.date})===snapshot)clearAmountOnly();
+        if(activeLoadedLot)refreshLotProgress();
       }
-    }).catch(err => {
-      alert('送信エラー: ' + err);
-    }).finally(() => {
-      setTimeout(() => {
-        isSavingCost = false;
-        btn.disabled = false;
-        btn.textContent = origLabel;
-      }, 600);
-    });
+    } finally {isSavingCost=false;btn.disabled=false;btn.textContent=label;}
   }
 
   // --- 進捗取得・残額リアルタイム計算・recordId安全削除 ---
@@ -1277,8 +1347,10 @@
     const box = document.getElementById('lotProgressBox');
     const list = document.getElementById('progressRecordsList');
 
-    fetchJsonp(gasUrl, { action: 'getLotProgress', lotId: activeLoadedLot.id })
+    const requestLotId=activeLoadedLot.id;
+    fetchJsonp(gasUrl, { action: 'getLotProgress', lotId: requestLotId })
       .then(res => {
+        if(activeLoadedLot?.id!==requestLotId)return;
         if (res.status === 'success') {
           box.style.display = 'flex';
           currentLotRecords = res.records || [];
@@ -1290,7 +1362,7 @@
             return;
           }
           [...currentLotRecords].reverse().forEach(r => {
-            const qtyLabel = (r.unitType === '一式') ? '一式' : `${r.amount}${r.unitType}`;
+            const qtyLabel = (r.unitType === '一式') ? '一式' : `${r.amount}${r.unitType==='kg'?'g':r.unitType}`;
             const itemDiv = document.createElement('div');
             itemDiv.className = 'progress-record-item';
             itemDiv.innerHTML = `
@@ -1306,60 +1378,34 @@
       }).catch(err => console.log('進捗取得エラー:', err));
   }
 
-  function deleteProgressRecord(recordId, btnEl) {
-    if (!recordId) return;
-    if (!confirm('この行の登録を取り消しますか？\n（スプレッドシートから安全に削除されます）')) return;
-
-    if (btnEl) {
-      btnEl.disabled = true;
-      btnEl.textContent = '削除中';
-    }
-
-    fetch(gasUrl, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'deleteCostRecord',
-        recordId: recordId
-      })
-    }).then(() => {
-      showToast('登録を取り消しました');
-      setTimeout(refreshLotProgress, 1200);
-    }).catch(err => {
-      alert('削除エラー: ' + err);
-      if (btnEl) {
-        btnEl.disabled = false;
-        btnEl.textContent = '削除';
-      }
-    });
+  async function deleteProgressRecord(recordId,btnEl) {
+    if(!activeLoadedLot||!recordId||!confirm('この登録を取り消しますか？'))return;
+    if(btnEl)btnEl.disabled=true;
+    try {if(await confirmedWrite({action:'deleteCostRecord',recordId},activeLoadedLot.id)){showToast('登録を取り消しました');refreshLotProgress();}}
+    finally {if(btnEl)btnEl.disabled=false;}
   }
 
-  function markCurrentLotCompleted() {
-    if (!activeLoadedLot) return;
-    if (!confirm('この山の符牒付けを完了にしますか？\n（呼出リストから外れ、責任者の一覧で完了表示になります）')) return;
-
-    fetch(gasUrl, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'updateEstimateStatus',
-        id: activeLoadedLot.id,
-        status: '完了'
-      })
-    }).then(() => {
-      showToast('山を「完了」に更新しました');
-      document.getElementById('loadedLotStatusBar').style.display = 'none';
-      document.getElementById('costRefDetailsBox').style.display = 'none';
-      document.getElementById('lotProgressBox').style.display = 'none';
-      activeLoadedLot = null;
-      currentLotRecords = [];
-    }).catch(err => alert('更新エラー: ' + err));
+  async function markCurrentLotCompleted() {
+    if(!activeLoadedLot||writeBusy||pendingWrite)return;
+    const lot=activeLoadedLot;
+    try{
+      const r=await readAction(gasUrl,'getLotProgress',{lotId:lot.id});
+      if(activeLoadedLot?.id!==lot.id||!Array.isArray(r.records)||!r.records.length){alert('登録原価を確認してください');return;}
+      const rem=Number(lot.buyPriceYen)-r.records.reduce((a,i)=>a+Number(i.actualYen),0);
+      if(!Number.isFinite(rem)){alert('原価合計を確認できません');return;}
+      if(!confirm('原価残額: '+rem.toLocaleString()+'円。'+(rem!==0?'差額があります。':'')+'完了にしますか？'))return;
+      if(await confirmedWrite({action:'updateEstimateStatus',id:lot.id,status:'完了'})){
+        if(activeLoadedLot?.id===lot.id){activeLoadedLot=null;currentLotRecords=[];for(const id of ['loadedLotStatusBar','costRefDetailsBox','lotProgressBox'])$(id).style.display='none';for(const id of ['lotName','buyPrice','lotEstimate','amountInput','costOtherRate','costOtherName'])$(id).value='';calculate();}
+        showToast('山を完了に更新しました');
+      }
+    }catch(e){alert(e.message);}
   }
 
   // --- 下見見積り積算ロジック ---
   let estimateItems = [];
+  function saveEstimateDraft() {
+    try{localStorage.setItem('fushimidou_est_draft_r3',JSON.stringify({items:estimateItems,lotName:$('estLotName').value,rate:currentEstLimitRate,venue:selectedEstVenue,customVenue:$('estCustomVenueInput').value}));}catch(e){console.warn(e);}
+  }
   let currentEstLimitRate = 0.8;
 
   function setEstLimitRate(rate, btn) {
@@ -1396,7 +1442,7 @@
 
     const isFlat = (effUnit === 'flat');
     const amount = isFlat ? 1 : (parseFloat(document.getElementById('estAmountInput').value) || 0);
-    if (!isFlat && amount <= 0) {
+    if (!positive(effRate) || (!isFlat && (!positive(amount) || (effUnit==='pcs' && !Number.isInteger(amount))))) {
       alert(effUnit === 'pcs' ? '数量（個）を入力してください' : '重量（g）を入力してください');
       return;
     }
@@ -1405,6 +1451,7 @@
       ? effRate
       : (effUnit === 'pcs' ? (effRate * amount) : (effRate * (amount / 1000)));
 
+    if(!Number.isFinite(subtotalThousand)||subtotalThousand<=0){alert('金額を確認してください');return;}
     estimateItems.push({
       itemName: effName,
       unit: effUnit,
@@ -1418,22 +1465,23 @@
       document.getElementById('estOtherName').value = '';
       document.getElementById('estOtherRate').value = '';
     }
-    renderEstimateSummary();
+    renderEstimateSummary();saveEstimateDraft();
   }
 
   function removeEstimateItem(idx) {
     estimateItems.splice(idx, 1);
-    renderEstimateSummary();
+    renderEstimateSummary();saveEstimateDraft();
   }
 
   function clearEstimateList(skipConfirm = false) {
     if (!skipConfirm && estimateItems.length > 0 && !confirm('見積もり積算リストを全クリアしますか？')) return;
+    if(!skipConfirm && (writeBusy||pendingWrite)){alert('送信結果を確認してください');return;}
     estimateItems = [];
     document.getElementById('estLotName').value = '';
     document.getElementById('estAmountInput').value = '';
     document.getElementById('estOtherName').value = '';
     document.getElementById('estOtherRate').value = '';
-    renderEstimateSummary();
+    renderEstimateSummary();saveEstimateDraft();
   }
 
   function renderEstimateSummary() {
@@ -1502,51 +1550,17 @@
   }
 
   let isSavingEstimate = false;
-  function saveEstimateToSheet() {
-    if (isSavingEstimate) return;
-    if (estimateItems.length === 0) { alert('品目が登録されていません'); return; }
-    if (!gasUrl) { alert('GAS連携URLを設定してください'); return; }
-
-    const lotName = document.getElementById('estLotName').value.trim() || '未設定山';
-    const totalThousand = estimateItems.reduce((acc, i) => acc + i.subtotalThousand, 0);
-
-    const payload = {
-      action: 'saveEstimate',
-      id: 'EST_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
-      date: new Date().toLocaleString('ja-JP'),
-      auction: getActiveEstVenueName(),
-      lotName: lotName,
-      totalEstYen: Math.round(totalThousand * 1000),
-      items: [...estimateItems]
-    };
-
-    isSavingEstimate = true;
-    const btn = document.getElementById('btnSaveEstimate');
-    const origLabel = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = '保管中...';
-
-    fetch(gasUrl, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
-    }).then(() => {
-      clearEstimateList(true);
-      showToast('スプレッドシートへ保管中...');
-      setTimeout(() => {
-        isSavingEstimate = false;
-        btn.disabled = false;
-        btn.textContent = origLabel;
-        showToast('見積もりを保管しました');
-        switchAppMode('estList');
-      }, 1300);
-    }).catch(err => {
-      isSavingEstimate = false;
-      btn.disabled = false;
-      btn.textContent = origLabel;
-      alert('保存エラー: ' + err);
-    });
+  async function saveEstimateToSheet() {
+    if(isSavingEstimate||writeBusy||pendingWrite) {if(pendingWrite)alert('前回の登録結果を確認してください');return;}
+    if(!estimateItems.length||!$('estLotName').value.trim()){alert('山名と見積内訳を入力してください');return;}
+    const total=estimateItems.reduce((a,i)=>a+i.subtotalThousand,0);
+    const payload={action:'saveEstimate',id:uniqueId('EST'),date:new Date().toLocaleString('ja-JP'),auction:getActiveEstVenueName(),lotName:$('estLotName').value.trim(),totalEstYen:Math.round(total*1000),items:JSON.parse(JSON.stringify(estimateItems)),limitRate:currentEstLimitRate,limitYen:currentEstLimitRate===null?null:Math.round(total*1000*currentEstLimitRate)};
+    const btn=$('btnSaveEstimate'),label=btn.textContent;
+    isSavingEstimate=true;btn.disabled=true;btn.textContent='保管確認中...';
+    try {if(await confirmedWrite(payload)){
+      if(JSON.stringify(estimateItems)===JSON.stringify(payload.items)&&$('estLotName').value.trim()===payload.lotName&&getActiveEstVenueName()===payload.auction&&currentEstLimitRate===payload.limitRate)clearEstimateList(true);
+      showToast('見積もりを保管しました');switchAppMode('estList');
+    }} finally {isSavingEstimate=false;btn.disabled=false;btn.textContent=label;}
   }
 
   // --- 見積一覧・落札可否 & 責任者クローズ管理 ---
@@ -1585,7 +1599,7 @@
       else if (est.status === '不落') { badgeClass = 'lost'; statusText = '不落 ✕'; }
       else if (est.status === '完了') { badgeClass = 'done'; statusText = '完了 🏁'; }
 
-      const buyPriceThousand = (est.buyPriceYen > 0) ? (est.buyPriceYen / 1000).toFixed(1) : '';
+      const buyPriceThousand = (est.buyPriceYen > 0) ? String(Number(est.buyPriceYen) / 1000) : '';
       const safeId = escapeHtml(est.id);
 
       let managerControls = '';
@@ -1642,49 +1656,20 @@
     if (el) el.style.display = (el.style.display === 'none') ? 'block' : 'none';
   }
 
-  function updateLotStatus(id, newStatus) {
-    const inputEl = document.getElementById(`cardBuyPrice_${id}`);
-    const inputVal = inputEl ? (parseFloat(inputEl.value) || 0) : 0;
-    const buyPriceYen = Math.round(inputVal * 1000);
-
-    fetch(gasUrl, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'updateEstimateStatus',
-        id: id,
-        status: newStatus,
-        buyPriceYen: buyPriceYen
-      })
-    }).then(() => {
-      showToast('ステータスを更新しました');
-      const target = loadedEstimates.find(e => e.id === id);
-      if (target) {
-        target.status = newStatus;
-        target.buyPriceYen = buyPriceYen;
-      }
-      renderEstimatesCards();
-    }).catch(err => alert('更新エラー: ' + err));
+  async function updateLotStatus(id,newStatus) {
+    const target=loadedEstimates.find(e=>e.id===id);
+    if(!target)return;
+    const allowed={'下見中':['落札','不落'],'落札':['落札','不落'],'不落':['落札'],'完了':['落札']};
+    if(!(allowed[target.status]||allowed['下見中']).includes(newStatus))return;
+    const buyPriceYen=Math.round(Number($('cardBuyPrice_'+id)?.value)*1000);
+    if(newStatus==='落札'&&!positive(buyPriceYen)){alert('落札額を入力してください');return;}
+    if(await confirmedWrite({action:'updateEstimateStatus',id,status:newStatus,...(newStatus==='落札'?{buyPriceYen}:{})})){showToast('ステータスを更新しました');fetchEstimatesList();}
   }
 
-  function archiveEstimateLot(id) {
-    if (!confirm('この山を一覧から削除（クローズ）しますか？\n（スプレッドシートの履歴データは安全に保管されます）')) return;
-
-    fetch(gasUrl, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'updateEstimateStatus',
-        id: id,
-        status: '削除'
-      })
-    }).then(() => {
-      showToast('山をクローズしました');
-      loadedEstimates = loadedEstimates.filter(e => e.id !== id);
-      renderEstimatesCards();
-    }).catch(err => alert('クローズエラー: ' + err));
+  async function archiveEstimateLot(id) {
+    const target=loadedEstimates.find(e=>e.id===id);
+    if(!target||!['完了','不落'].includes(target.status)||!confirm('一覧からクローズしますか？'))return;
+    if(await confirmedWrite({action:'updateEstimateStatus',id,status:'削除'})){showToast('山をクローズしました');fetchEstimatesList();}
   }
 
   // --- 確定原価側への落札山呼出 ---
@@ -1728,8 +1713,12 @@
   function closeWonLotsModal() { document.getElementById('wonLotsModal').style.display = 'none'; }
 
   function selectWonLotToCostMode(lot) {
+    if(writeBusy||pendingWrite){alert('前回の登録結果を確認してください');return;}
+    if(($('amountInput').value||$('costOtherRate').value)&&!confirm('入力中の原価をクリアして山を切り替えますか？'))return;
+    for(const id of ['amountInput','costOtherRate','costOtherName'])$(id).value='';
     activeLoadedLot = lot;
     currentLotRecords = [];
+    $('progressRecordsList').textContent='読み込み中...';
 
     const venueBtns = document.querySelectorAll('#modeCostView .venue-btn');
     let matched = false;
@@ -1745,8 +1734,8 @@
     }
 
     document.getElementById('lotName').value = lot.lotName;
-    document.getElementById('lotEstimate').value = (lot.totalEstYen / 1000).toFixed(1);
-    document.getElementById('buyPrice').value = (lot.buyPriceYen > 0) ? (lot.buyPriceYen / 1000).toFixed(1) : '';
+    document.getElementById('lotEstimate').value = String(Number(lot.totalEstYen) / 1000);
+    document.getElementById('buyPrice').value = (lot.buyPriceYen > 0) ? String(Number(lot.buyPriceYen) / 1000) : '';
 
     const statusBar = document.getElementById('loadedLotStatusBar');
     document.getElementById('loadedLotStatusText').textContent = `呼出中: ${lot.lotName} (${lot.date || ''})`;
@@ -1804,7 +1793,8 @@
 
   function connectAndPullMaster() {
     const url = document.getElementById('inputGasUrl').value.trim() || gasUrl;
-    if (!url) { alert('URLを入力してください'); return; }
+    if(writeBusy||pendingWrite){alert('送信結果を確認してください');return;}
+    if (!validGasUrl(url)) { alert('GAS URLを確認してください'); return; }
 
     fetchJsonp(url, { action: 'getMaster' })
       .then(res => {
@@ -1815,6 +1805,7 @@
           localStorage.setItem('app_master_items', JSON.stringify(items));
           localStorage.setItem('fushimidou_last_sync', Date.now());
           renderGrid();
+          calculate();
           renderEstGrid();
           refreshMasterModalList();
           updateSyncDisplay();
@@ -1835,6 +1826,7 @@
           localStorage.setItem('app_master_items', JSON.stringify(items));
           localStorage.setItem('fushimidou_last_sync', Date.now());
           renderGrid();
+          calculate();
           if (currentAppMode === 'estCalc') renderEstGrid();
           if (badge) {
             badge.textContent = '同期完了 ✓';
@@ -1851,7 +1843,7 @@
     document.getElementById('masterModal').style.display = 'block';
     const list = document.getElementById('masterList');
     if (sortableInstance) sortableInstance.destroy();
-    sortableInstance = new Sortable(list, { handle: '.drag-handle', animation: 150 });
+    if(typeof Sortable!=='undefined') sortableInstance = new Sortable(list, { handle: '.drag-handle', animation: 150 });
   }
   function closeMasterModal() { document.getElementById('masterModal').style.display = 'none'; }
 
@@ -1886,7 +1878,11 @@
   }
 
   function saveConnectionSettingsOnly() {
-    gasUrl = document.getElementById('inputGasUrl').value.trim();
+    if(writeBusy||pendingWrite){alert('送信結果を確認してください');return;}
+    const url=$('inputGasUrl').value.trim();
+    const pin=$('inputNewPasscode').value.trim();
+    if(!validGasUrl(url)|| (pin&&!/^\d{6}$/.test(pin))){alert('URLまたは6桁のPINを確認してください');return;}
+    gasUrl=url;
     localStorage.setItem('fushimidou_gas_url', gasUrl);
     const newPass = document.getElementById('inputNewPasscode').value.trim();
     if (newPass && /^\d{6}$/.test(newPass)) {
@@ -1896,35 +1892,13 @@
     showToast('設定を保存しました');
   }
 
-  function saveMasterDataSafe() {
-    const rows = document.querySelectorAll('.master-row');
-    const newItems = [];
-    rows.forEach(r => {
-      const name = r.querySelector('.name').value.trim();
-      const rate = parseFloat(r.querySelector('.rate').value) || 0;
-      const unit = r.querySelector('.unit').value || 'kg';
-      if (name) newItems.push({ name, rate, unit });
-    });
-    if (newItems.length === 0) return;
-    if (!confirm('スプレッドシートの商品マスタを上書き更新しますか？')) return;
-
-    items = newItems;
-    localStorage.setItem('app_master_items', JSON.stringify(items));
-    localStorage.setItem('fushimidou_last_sync', Date.now());
-    renderGrid();
-    renderEstGrid();
-    calculate();
-    updateSyncDisplay();
-
-    if (gasUrl) {
-      fetch(gasUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'updateMaster', items: newItems })
-      }).then(() => showToast('マスタを更新しました'));
+  async function saveMasterDataSafe() {
+    const newItems=[...document.querySelectorAll('.master-row')].map(r=>({name:r.querySelector('.name').value.trim(),rate:Number(r.querySelector('.rate').value),unit:r.querySelector('.unit').value}));
+    if(!newItems.length||newItems.some(i=>!i.name||!positive(i.rate))||new Set(newItems.map(i=>i.name)).size!==newItems.length){alert('品目名の重複・空欄・単価を確認してください');return;}
+    if(!confirm('商品マスタを上書き更新しますか？'))return;
+    if(await confirmedWrite({action:'updateMaster',items:newItems})){
+      items=newItems;localStorage.setItem('app_master_items',JSON.stringify(items));localStorage.setItem('fushimidou_last_sync',Date.now());renderGrid();renderEstGrid();calculate();updateSyncDisplay();closeMasterModal();showToast('マスタを更新しました');
     }
-    closeMasterModal();
   }
 
   // --- テンキー電卓相互変換 ---
@@ -1986,7 +1960,7 @@
     }
   }
   function pressNum(digit) {
-    if (curInputStr.length >= 8) return;
+    if (curInputStr.length + digit.length > 7) return;
     if (curInputStr === '' && (digit === '0' || digit === '00')) return;
     curInputStr += digit; updatePriceConvDisplay();
   }
@@ -2009,10 +1983,24 @@
   }
 
   // 起動初期化
+  const draft=readLocal('fushimidou_est_draft_r3',null);
+  if(draft && Array.isArray(draft.items)){
+    estimateItems=draft.items; $('estLotName').value=draft.lotName||'';
+    currentEstLimitRate=draft.rate===null?null:(Number.isFinite(draft.rate)?draft.rate:0.8);
+    const btns=[...document.querySelectorAll('#modeEstCalcView .venue-btn')];
+    const b=btns.find(b=>b.textContent===draft.venue);if(b)selectEstVenue(draft.venue,b);
+    $('estCustomVenueInput').value=draft.customVenue||'';
+    $('customEstRate').value=currentEstLimitRate===null?'':Math.round(currentEstLimitRate*100);
+    document.querySelectorAll('.rate-btn').forEach(b=>b.classList.remove('active'));
+  }
+  $('estLotName').addEventListener('input',saveEstimateDraft);
+  $('estCustomVenueInput').addEventListener('input',saveEstimateDraft);
+  $('modeEstCalcView').addEventListener('click',()=>saveEstimateDraft());
+  $('customEstRate').addEventListener('input',saveEstimateDraft);
   renderGrid();
   renderEstimateSummary();
   updateSyncDisplay();
-  syncMasterFromSheetSilently();
+  updatePendingUI();
 </script>
 </body>
 </html>
