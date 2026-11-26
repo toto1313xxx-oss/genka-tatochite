@@ -360,7 +360,7 @@
 
 <div class="container">
   <div id="pendingNotice" style="display:none;background:#422006;padding:10px;border:1px solid #f59e0b;border-radius:8px;font-size:12px;">
-    <div id="pendingLabel"></div><button class="btn-header" onclick="recheckPending()">結果を再確認</button> <button class="btn-header" onclick="exportPending()">送信内容を保存</button> <button class="btn-header" onclick="resolvePendingManually()">シートで確認</button>
+    <div id="pendingLabel"></div><button class="btn-header" onclick="recheckPending()">結果を再確認</button> <button class="btn-header" onclick="retryPending()">同じIDで再送</button> <button class="btn-header" onclick="exportPending()">送信内容を保存</button> <button class="btn-header" onclick="resolvePendingManually()">シートで確認</button>
   </div>
   <!-- ヘッダー -->
   <div class="header-bar">
@@ -731,7 +731,8 @@
   const APP_VERSION = "2026.11.27-r3";
 
   (function checkPwaUpdate() {
-    if(localStorage.getItem('fushimidou_pending_r3') || localStorage.getItem('fushimidou_est_draft_r3')) return;
+    if(localStorage.getItem('fushimidou_pending_r3')) return;
+    try { const d=JSON.parse(localStorage.getItem('fushimidou_est_draft_r3')||'null'); if(d&&(d.items?.length||d.lotName))return; }catch(_) {return;}
     const lastCheck = sessionStorage.getItem('last_update_check');
     const now = Date.now();
     if (lastCheck && now - Number(lastCheck) < 60000) return;
@@ -905,7 +906,7 @@
   const normMaster = rows => rows.map(i=>({name:String(i.name).trim(), rate:Number(i.rate), unit:i.unit==='pcs'||i.unit==='個'?'pcs':'kg'}));
   async function verifyWrite(p) {
     const x=p.payload, url=p.url;
-    if(x.operationId && gasToken){const r=await readAction(url,'getOperation',{operationId:x.operationId});if(r.rejected)throw Object.assign(Error(r.message||'登録を拒否しました'),{definitive:true});return r.committed===true && r.action===x.action;}
+    if(x.operationId){if(!gasToken)throw Error('接続トークンが必要です');const r=await readAction(url,'getOperation',{operationId:x.operationId});if(r.rejected)throw Object.assign(Error(r.message||'登録を拒否しました'),{definitive:true});return r.committed===true && r.action===x.action;}
     if(x.action==='saveCostRecord' || x.action==='deleteCostRecord') {
       const r=await readAction(url,'getLotProgress',{lotId:p.lotId||x.lotId||''});
       if(!Array.isArray(r.records)) throw Error('原価一覧応答が不正');
@@ -929,19 +930,39 @@
     }
     return false;
   }
-  async function confirmedWrite(payload, lotId='') {
-    if(writeBusy || pendingWrite) { alert('前の送信結果を確認してください。'); return false; }
-    if(!validGasUrl(gasUrl)) { alert('GAS URLを確認してください'); return false; }
+  async function sendPending(p) {
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),15000);
+    try { await fetch(p.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({...p.payload,token:gasToken}),signal:controller.signal}); }
+    catch(e) { console.warn('送信結果不明',e); }
+    finally { clearTimeout(timer); }
+  }
+  async function retryPending() {
+    if(!pendingWrite||writeBusy)return;
+    const p=pendingWrite;
+    if(!p.payload.operationId||!gasToken||p.url!==gasUrl){alert('同じGASへの認証済み操作だけ再送できます');return;}
+    if(!confirm('同じ操作IDで再送します。新規登録IDは発行しません。'))return;
     writeBusy=true;
     try {
-      if(gasToken)payload={...payload,operationId:uniqueId('OP')};
-      const p={payload,url:gasUrl,lotId};
+      const r=await readAction(p.url,'getMaster');
+      if(r.protocol!=='fushimidou-r3'||r.role!==p.role){alert('元の担当区分・新GASへの接続を確認してください');return;}
+      if(!await verifyWrite(p))await sendPending(p);
+      if(await waitForWrite(p)){setPending(null);finishRecoveredWrite(p);showToast('登録結果を確認しました');}
+      else alert('結果未確認。入力と操作IDを保持します。');
+    }catch(e){if(e.definitive)setPending(null);alert(e.message);}
+    finally{writeBusy=false;}
+  }
+  async function confirmedWrite(payload, lotId='') {
+    if(writeBusy || pendingWrite) { alert('前の送信結果を確認してください。'); return false; }
+    if(!validGasUrl(gasUrl)||!gasToken) { alert('新GASのURLと担当トークンを設定してください'); return false; }
+    writeBusy=true;
+    try {
+      const auth=await readAction(gasUrl,'getMaster');
+      if(auth.protocol!=='fushimidou-r3'||!['manager','staff'].includes(auth.role))throw Error('新GASとの接続を確認してください');
+      payload={...payload,operationId:uniqueId('OP')};
+      const p={payload,url:gasUrl,lotId,role:auth.role};
       setPending(p);
-      const controller=new AbortController();
-      const timer=setTimeout(()=>controller.abort(),15000);
-      try { await fetch(p.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({...payload,...(gasToken?{token:gasToken}:{})}),signal:controller.signal}); }
-      catch(e) { console.warn('送信結果不明',e); }
-      finally { clearTimeout(timer); }
+      await sendPending(p);
       if(await waitForWrite(p)) { setPending(null); return true; }
       alert('保存結果を確認できません。再送せず、上部の「結果を再確認」を押してください。');
       return false;
@@ -1265,11 +1286,11 @@
   let currentLotRecords = [];
 
   function calculate() {
-    const buyPrice = parseFloat(document.getElementById('buyPrice').value) || 0;
-    const lotEstimate = parseFloat(document.getElementById('lotEstimate').value) || 0;
+    const buyPrice = Math.round((parseFloat(document.getElementById('buyPrice').value)||0)*1000)/1000;
+    const lotEstimate = Math.round((parseFloat(document.getElementById('lotEstimate').value)||0)*1000)/1000;
     const amountVal = parseFloat(document.getElementById('amountInput').value) || 0;
 
-    const ratio = (lotEstimate > 0) ? (buyPrice / lotEstimate) : 0;
+    const ratio = (lotEstimate > 0) ? (Math.round(buyPrice*1000) / Math.round(lotEstimate*1000)) : 0;
     document.getElementById('lotRatioBadge').textContent = (ratio > 0) ? (ratio * 100).toFixed(1) + '%' : '---- %';
 
     let effItemName = selectedItem.name;
