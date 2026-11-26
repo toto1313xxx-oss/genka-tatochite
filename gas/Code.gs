@@ -238,7 +238,7 @@ function write_(sh,p,role){
       if(!Array.isArray(p.items)||!p.items.length||p.items.length>300)throw Error('マスタ件数が不正です');
       const items=p.items.map(i=>{
         if(!['kg','pcs'].includes(i.unit))throw Error('マスタ単位が不正です');
-        return {name:text_(i.name,'品目'),rate:num_(i.rate,'単価'),unit:i.unit};
+        return {name:text_(i.name,'品目'),rate:num_(i.rate,'単価',false,true),unit:i.unit};
       });
       if(new Set(items.map(i=>i.name)).size!==items.length)throw Error('品目名が重複しています');
       d={items};break;
