@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="伏見堂 原価符牒">
-  <meta name="app-version" content="2026.11.27-r3.1">
+  <meta name="app-version" content="2026.11.27-r3.1.1">
 
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -699,15 +699,13 @@
       <button class="btn-close" onclick="closeMasterModal()">✕</button>
     </div>
     <div style="background:#0a0b0e; border:1px solid #3f3f46; border-radius:10px; padding:12px; margin-bottom:14px;">
-      <div class="setting-title">📊 スプレッドシート連携（v2026.11.27-r3.1）</div>
+      <div class="setting-title">📊 スプレッドシート連携（v2026.11.27-r3.1.1）</div>
       <div style="display:flex; gap:6px; align-items:center;">
         <input type="text" id="inputGasUrl" placeholder="GAS WebアプリURL" style="flex:1; background:#181920; border:1px solid #52525b; color:#38bdf8; padding:8px; border-radius:6px; font-size:12px;">
         <button class="btn-header" style="background:#0284c7; border-color:#38bdf8; color:#fff;" onclick="connectAndPullMaster()">手動再取得</button>
       </div>
       <div style="margin-top:10px;">
-        <div class="setting-title">GAS 接続トークン（責任者 / スタッフ）</div>
-        <input type="password" id="inputGasToken" autocomplete="off" placeholder="設定時に発行されたトークン" style="width:100%;background:#181920;border:1px solid #52525b;color:#fef08a;padding:8px;border-radius:6px;font-size:13px;">
-        <div id="gasRoleLabel" style="font-size:11px;color:#94a3b8;margin-top:4px;">接続権限: 未確認</div>
+        <div id="gasRoleLabel" style="font-size:11px;color:#94a3b8;margin-top:4px;">未接続</div>
       </div>
       <div style="margin-top:10px;">
         <div class="setting-title" style="font-size:11px;">🔒 起動パスコード変更（数字6桁）</div>
@@ -728,7 +726,7 @@
 
 <script>
   // --- バージョン文字列ベースのPWA自動更新判定 ---
-  const APP_VERSION = "2026.11.27-r3.1";
+  const APP_VERSION = "2026.11.27-r3.1.1";
 
   (function checkPwaUpdate() {
     if(localStorage.getItem('fushimidou_pending_r3')) return;
@@ -811,16 +809,13 @@
     localStorage.setItem('fushimidou_gas_url', HARDCODED_GAS_URL);
   }
   let gasUrl = storedGasUrl;
-  let gasToken = localStorage.getItem('fushimidou_gas_token') || '';
   let masterRevision = '';
   let editorRevision = null;
   let progressRequest = 0;
   let estimatesRequest = 0;
-  let gasRole = '';
   function setGasRole(r) {
-    gasRole=r.role||'';
     if(typeof r.revision==='string')masterRevision=r.revision;
-    document.getElementById('gasRoleLabel').textContent='接続権限: '+(gasRole==='manager'?'責任者':gasRole==='staff'?'スタッフ':'未確認');
+    document.getElementById('gasRoleLabel').textContent='接続済み';
   }
 
   const defaultItems = [
@@ -909,7 +904,7 @@
   const normMaster = rows => rows.map(i=>({name:String(i.name).trim(), rate:Number(i.rate), unit:i.unit==='pcs'||i.unit==='個'?'pcs':'kg'}));
   async function verifyWrite(p) {
     const x=p.payload, url=p.url;
-    if(x.operationId){if(!gasToken||url!==gasUrl)throw Error('元のGASと接続トークンが必要です');const r=await readAction(url,'getOperation',{operationId:x.operationId});if(r.rejected)throw Object.assign(Error(r.message||'登録を拒否しました'),{definitive:true});return r.committed===true && r.action===x.action;}
+    if(x.operationId){if(url!==gasUrl)throw Error('元のGASへの接続が必要です');const r=await readAction(url,'getOperation',{operationId:x.operationId});if(r.rejected)throw Object.assign(Error(r.message||'登録を拒否しました'),{definitive:true});return r.committed===true && r.action===x.action;}
     if(x.action==='saveCostRecord' || x.action==='deleteCostRecord') {
       const r=await readAction(url,'getLotProgress',{lotId:p.lotId||x.lotId||''});
       if(!Array.isArray(r.records)) throw Error('原価一覧応答が不正');
@@ -936,19 +931,19 @@
   async function sendPending(p) {
     const controller=new AbortController();
     const timer=setTimeout(()=>controller.abort(),15000);
-    try { await fetch(p.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({...p.payload,token:gasToken}),signal:controller.signal}); }
+    try { await fetch(p.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(p.payload),signal:controller.signal}); }
     catch(e) { console.warn('送信結果不明',e); }
     finally { clearTimeout(timer); }
   }
   async function retryPending() {
     if(!pendingWrite||writeBusy)return;
     const p=pendingWrite;
-    if(!p.payload.operationId||!gasToken||p.url!==gasUrl){alert('同じGASへの認証済み操作だけ再送できます');return;}
+    if(!p.payload.operationId||p.url!==gasUrl){alert('同じGASへの保留中の操作だけ再送できます');return;}
     if(!confirm('同じ操作IDで再送します。新規登録IDは発行しません。'))return;
     writeBusy=true;
     try {
       const r=await readAction(p.url,'getMaster');
-      if(r.protocol!=='fushimidou-r3'||r.role!==p.role){alert('元の担当区分・新GASへの接続を確認してください');return;}
+      if(r.protocol!=='fushimidou-r3'||r.role!=='shared'){alert('元の担当区分・新GASへの接続を確認してください');return;}
       if(!await verifyWrite(p))await sendPending(p);
       if(await waitForWrite(p)){setPending(null);finishRecoveredWrite(p);showToast('登録結果を確認しました');}
       else alert('結果未確認。入力と操作IDを保持します。');
@@ -957,11 +952,11 @@
   }
   async function confirmedWrite(payload, lotId='') {
     if(writeBusy || pendingWrite) { alert('前の送信結果を確認してください。'); return false; }
-    if(!validGasUrl(gasUrl)||!gasToken) { alert('新GASのURLと担当トークンを設定してください'); return false; }
+    if(!validGasUrl(gasUrl)) { alert('新GASのURLを設定してください'); return false; }
     writeBusy=true;
     try {
       const auth=await readAction(gasUrl,'getMaster');
-      if(auth.protocol!=='fushimidou-r3'||!['manager','staff'].includes(auth.role))throw Error('新GASとの接続を確認してください');
+      if(auth.protocol!=='fushimidou-r3'||auth.role!=='shared')throw Error('新GASとの接続を確認してください');
       payload={...payload,operationId:uniqueId('OP')};
       const p={payload,url:gasUrl,lotId,role:auth.role};
       setPending(p);
@@ -1016,11 +1011,11 @@
   }
 
   // --- JSONP ローダー ---
-  function fetchJsonp(url, params = {}, token=gasToken) {
+  function fetchJsonp(url, params = {}) {
     return new Promise((resolve,reject)=>{
       if(!validGasUrl(url)) { reject(Error('GAS URLが不正です')); return; }
       const callbackName='gas_cb_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-      const target=new URL(url); Object.entries({...params,...(token?{token}:{}),callback:callbackName,t:Date.now()}).forEach(([k,v])=>target.searchParams.set(k,String(v)));
+      const target=new URL(url); Object.entries({...params,callback:callbackName,t:Date.now()}).forEach(([k,v])=>target.searchParams.set(k,String(v)));
       const script=document.createElement('script');
       let done=false;
       const finish=(err,data)=>{if(done)return;done=true;clearTimeout(timer);delete window[callbackName];script.remove();err?reject(err):resolve(data);};
@@ -1446,7 +1441,6 @@
   }
 
   async function deleteProgressRecord(recordId,btnEl) {
-    if(gasToken&&gasRole!=='manager'){alert('責任者権限が必要です');return;}
     if(!activeLoadedLot||!recordId||!confirm('この登録を取り消しますか？'))return;
     if(btnEl)btnEl.disabled=true;
     try {if(await confirmedWrite({action:'deleteCostRecord',recordId},activeLoadedLot.id)){showToast('登録を取り消しました');refreshLotProgress();}}
@@ -1729,7 +1723,6 @@
   }
 
   async function updateLotStatus(id,newStatus) {
-    if(gasToken&&gasRole!=='manager'){alert('責任者権限が必要です');return;}
     const target=loadedEstimates.find(e=>e.id===id);
     if(!target)return;
     const allowed={'下見中':['落札','不落'],'落札':['落札','不落'],'不落':['落札'],'完了':['落札']};
@@ -1740,7 +1733,6 @@
   }
 
   async function archiveEstimateLot(id) {
-    if(gasToken&&gasRole!=='manager'){alert('責任者権限が必要です');return;}
     const target=loadedEstimates.find(e=>e.id===id);
     if(!target||!['完了','不落'].includes(target.status)||!confirm('一覧からクローズしますか？'))return;
     if(await confirmedWrite({action:'updateEstimateStatus',id,status:'削除',expectedStatus:target.status})){showToast('山をクローズしました');fetchEstimatesList();}
@@ -1870,11 +1862,10 @@
     if(writeBusy||pendingWrite){alert('送信結果を確認してください');return;}
     if (!validGasUrl(url)) { alert('GAS URLを確認してください'); return; }
 
-    const token=$('inputGasToken').value.trim();
-    fetchJsonp(url, { action: 'getMaster' },token)
+    fetchJsonp(url, { action: 'getMaster' })
       .then(res => {
-        if (res.status === 'success' && res.protocol==='fushimidou-r3' && Array.isArray(res.items)) {
-          gasUrl = url;gasToken=token;localStorage.setItem('fushimidou_gas_token',gasToken);setGasRole(res);
+        if (res.status === 'success' && res.protocol==='fushimidou-r3' && res.role==='shared' && Array.isArray(res.items)) {
+          gasUrl = url;setGasRole(res);
           localStorage.setItem('fushimidou_gas_url', gasUrl);
           if(res.initialized!==false)items = normMaster(res.items);
           setGasRole(res);
@@ -1892,13 +1883,13 @@
   }
 
   function syncMasterFromSheetSilently(isManualClick = false) {
-    if (!gasUrl||!gasToken) return Promise.resolve(false);
+    if (!gasUrl) return Promise.resolve(false);
     const badge = document.getElementById('syncStatusBadge');
     if (isManualClick && badge) badge.textContent = '同期中...';
 
     return fetchJsonp(gasUrl, { action: 'getMaster' })
       .then(res => {
-        if (res.status === 'success' && res.protocol==='fushimidou-r3' && Array.isArray(res.items)) {
+        if (res.status === 'success' && res.protocol==='fushimidou-r3' && res.role==='shared' && Array.isArray(res.items)) {
           if(res.initialized!==false)items = normMaster(res.items);
           setGasRole(res);
           localStorage.setItem('app_master_items', JSON.stringify(items));
@@ -1921,7 +1912,6 @@
     refreshMasterModalList();
     editorRevision=masterRevision;
     document.getElementById('inputGasUrl').value = gasUrl;
-    $('inputGasToken').value=gasToken;
     document.getElementById('masterModal').style.display = 'block';
     const list = document.getElementById('masterList');
     if (sortableInstance) sortableInstance.destroy();
@@ -1965,14 +1955,14 @@
     const pin=$('inputNewPasscode').value.trim();
     if(!validGasUrl(url)|| (pin&&!/^\d{6}$/.test(pin))){alert('URLまたは6桁のPINを確認してください');return;}
     gasUrl=url;
-    gasToken=$('inputGasToken').value.trim();localStorage.setItem('fushimidou_gas_token',gasToken);gasRole='';masterRevision='';editorRevision=null;
+    masterRevision='';editorRevision=null;
     localStorage.setItem('fushimidou_gas_url', gasUrl);
     const newPass = document.getElementById('inputNewPasscode').value.trim();
     if (newPass && /^\d{6}$/.test(newPass)) {
       currentPin = newPass;
       localStorage.setItem('fushimidou_pin', newPass);
     }
-    $('gasRoleLabel').textContent='接続権限: 未確認';
+    $('gasRoleLabel').textContent='未接続';
     showToast('設定を保存しました。マスタ再取得で接続確認してください');
   }
 
@@ -1980,7 +1970,6 @@
     const newItems=[...document.querySelectorAll('.master-row')].map(r=>({name:r.querySelector('.name').value.trim(),rate:r.querySelector('.rate').value.trim()===''?NaN:Number(r.querySelector('.rate').value),unit:r.querySelector('.unit').value}));
     if(!newItems.length||newItems.some(i=>!i.name||!Number.isFinite(i.rate)||i.rate<0)||new Set(newItems.map(i=>i.name)).size!==newItems.length){alert('品目名の重複・空欄・単価を確認してください');return;}
     if(!confirm('商品マスタを上書き更新しますか？'))return;
-    if(gasToken && gasRole!=='manager'){alert('責任者トークンで接続してください');return;}
     if(editorRevision===null){alert('マスタを再取得してから編集してください');return;}
     if(await confirmedWrite({action:'updateMaster',items:newItems,expectedRevision:editorRevision})){
       const synced=await syncMasterFromSheetSilently(true);
