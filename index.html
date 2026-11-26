@@ -832,7 +832,7 @@
   ];
 
   let rawItems = readLocal('app_master_items', defaultItems);
-  if (!Array.isArray(rawItems) || !rawItems.length || rawItems.some(i => !i || typeof i.name !== 'string' || !Number.isFinite(Number(i.rate)) || Number(i.rate)<=0)) rawItems = defaultItems;
+  if (!Array.isArray(rawItems) || !rawItems.length || rawItems.some(i => !i || typeof i.name !== 'string' || !Number.isFinite(Number(i.rate)) || Number(i.rate)<0)) rawItems = defaultItems;
   let items = rawItems.map(item => ({
     name: item.name,
     rate: Number(item.rate),
@@ -1959,7 +1959,7 @@
 
   async function saveMasterDataSafe() {
     const newItems=[...document.querySelectorAll('.master-row')].map(r=>({name:r.querySelector('.name').value.trim(),rate:Number(r.querySelector('.rate').value),unit:r.querySelector('.unit').value}));
-    if(!newItems.length||newItems.some(i=>!i.name||!positive(i.rate))||new Set(newItems.map(i=>i.name)).size!==newItems.length){alert('品目名の重複・空欄・単価を確認してください');return;}
+    if(!newItems.length||newItems.some(i=>!i.name||!Number.isFinite(i.rate)||i.rate<0)||new Set(newItems.map(i=>i.name)).size!==newItems.length){alert('品目名の重複・空欄・単価を確認してください');return;}
     if(!confirm('商品マスタを上書き更新しますか？'))return;
     if(gasToken && gasRole!=='manager'){alert('責任者トークンで接続してください');return;}
     if(await confirmedWrite({action:'updateMaster',items:newItems,expectedRevision:masterRevision})){
