@@ -360,7 +360,7 @@
 
 <div class="container">
   <div id="pendingNotice" style="display:none;background:#422006;padding:10px;border:1px solid #f59e0b;border-radius:8px;font-size:12px;">
-    <div id="pendingLabel"></div><button class="btn-header" onclick="recheckPending()">結果を再確認</button> <button class="btn-header" onclick="exportPending()">送信内容を保存</button>
+    <div id="pendingLabel"></div><button class="btn-header" onclick="recheckPending()">結果を再確認</button> <button class="btn-header" onclick="exportPending()">送信内容を保存</button> <button class="btn-header" onclick="resolvePendingManually()">シートで確認</button>
   </div>
   <!-- ヘッダー -->
   <div class="header-bar">
@@ -726,6 +726,7 @@
   const APP_VERSION = "2026.11.27-r3";
 
   (function checkPwaUpdate() {
+    if(localStorage.getItem('fushimidou_pending_r3') || localStorage.getItem('fushimidou_est_draft_r3')) return;
     const lastCheck = sessionStorage.getItem('last_update_check');
     const now = Date.now();
     if (lastCheck && now - Number(lastCheck) < 60000) return;
@@ -932,6 +933,24 @@
     } catch(e) { alert('処理できません: '+e.message); return false; }
     finally { writeBusy=false; }
   }
+  function finishRecoveredWrite(p) {
+    if(p.payload.action==='saveCostRecord'){
+      calculate();
+      const d=curCalculatedData;
+      if(['auction','lotName','itemName','unitType','amount','buyPriceYen','lotEstimateYen','actualYen','lotId'].every(k=>d[k]===p.payload[k]))clearAmountOnly();
+    }
+    if(p.payload.action==='saveEstimate' && JSON.stringify(estimateItems)===JSON.stringify(p.payload.items) && $('estLotName').value.trim()===p.payload.lotName && getActiveEstVenueName()===p.payload.auction && currentEstLimitRate===p.payload.limitRate) clearEstimateList(true);
+    if(activeLoadedLot)refreshLotProgress();
+    if(currentAppMode==='estList')fetchEstimatesList();
+    if(p.payload.action==='updateMaster')syncMasterFromSheetSilently(true);
+  }
+  function resolvePendingManually() {
+    if(!pendingWrite||writeBusy)return;
+    const p=pendingWrite;
+    if(!confirm('スプレッドシートで該当ID・金額・状態を直接確認し、操作が反映されていることを確認しましたか？ 未確認の場合はキャンセルしてください。'))return;
+    if(!confirm('確認済みとして送信待ちを解除します。再送は行いません。'))return;
+    setPending(null);finishRecoveredWrite(p);showToast('手動確認済み');
+  }
   async function recheckPending() {
     if(!pendingWrite || writeBusy) return;
     writeBusy=true;
@@ -940,10 +959,7 @@
       if(!await waitForWrite(p)) { alert('まだ確認できません。再送せずシートの該当IDを確認してください。'); return; }
       setPending(null);
       showToast('登録結果を確認しました');
-      if(p.payload.action==='saveCostRecord' || p.payload.action==='saveEstimate') alert('登録済みです。重複を防ぐため、該当入力を確認してから次へ進んでください。');
-      if(activeLoadedLot) refreshLotProgress();
-      if(currentAppMode==='estList') fetchEstimatesList();
-      if(p.payload.action==='updateMaster') syncMasterFromSheetSilently(true);
+      finishRecoveredWrite(p);
     } finally {writeBusy=false;}
   }
   function exportPending() {
@@ -1286,6 +1302,7 @@
   }
 
   function clearAmountOnly() {
+    if(pendingWrite){alert('送信結果を確認してください');return;}
     if (selectedItem.isOther && costOtherUnit === 'flat') {
       document.getElementById('costOtherRate').value = '';
       document.getElementById('costOtherName').value = '';
@@ -1370,7 +1387,7 @@
                 <span style="font-weight:bold; color:#fff;">${escapeHtml(r.itemName)}</span>
                 <span style="color:#94a3b8; font-size:10px;">${escapeHtml(qtyLabel)} / ${(r.actualYen / 1000).toFixed(1)}k [${escapeHtml(r.cipher)}]</span>
               </div>
-              <button class="btn-record-del" onclick="deleteProgressRecord('${escapeHtml(r.recordId)}', this)">削除</button>
+              <button class="btn-record-del" onclick="deleteProgressRecord(${escapeHtml(JSON.stringify(String(r.recordId)))}, this)">削除</button>
             `;
             list.appendChild(itemDiv);
           });
@@ -1601,19 +1618,20 @@
 
       const buyPriceThousand = (est.buyPriceYen > 0) ? String(Number(est.buyPriceYen) / 1000) : '';
       const safeId = escapeHtml(est.id);
+      const safeArg = escapeHtml(JSON.stringify(String(est.id)));
 
       let managerControls = '';
       if (est.status === '完了') {
         managerControls = `
           <div class="manager-action-row">
-            <button class="btn-mgr-rollback" onclick="updateLotStatus('${safeId}', '落札')">↩️ 落札に戻す(店舗へ再送)</button>
-            <button class="btn-mgr-archive" onclick="archiveEstimateLot('${safeId}')">🗑️ 一覧から削除(クローズ)</button>
+            <button class="btn-mgr-rollback" onclick="updateLotStatus(${safeArg}, '落札')">↩️ 落札に戻す(店舗へ再送)</button>
+            <button class="btn-mgr-archive" onclick="archiveEstimateLot(${safeArg})">🗑️ 一覧から削除(クローズ)</button>
           </div>
         `;
       } else if (est.status === '不落') {
         managerControls = `
           <div class="manager-action-row">
-            <button class="btn-mgr-archive" onclick="archiveEstimateLot('${safeId}')">🗑️ 不落を一覧から削除(クローズ)</button>
+            <button class="btn-mgr-archive" onclick="archiveEstimateLot(${safeArg})">🗑️ 不落を一覧から削除(クローズ)</button>
           </div>
         `;
       }
@@ -1636,10 +1654,10 @@
         </div>
         <div style="display:flex; gap:6px; align-items:center; margin-top:4px;">
           <input type="number" id="cardBuyPrice_${safeId}" placeholder="落札額(千円)" value="${buyPriceThousand}" inputmode="decimal" style="flex:1; background:#0a0b0e; border:1px solid #3f3f46; color:#fef08a; padding:6px; border-radius:6px; font-size:13px; text-align:right;">
-          <button class="venue-btn ${est.status === '落札' ? 'active' : ''}" style="width:70px; padding:6px 0;" onclick="updateLotStatus('${safeId}', '落札')">落札</button>
-          <button class="venue-btn ${est.status === '不落' ? 'active' : ''}" style="width:60px; padding:6px 0;" onclick="updateLotStatus('${safeId}', '不落')">不落</button>
+          <button class="venue-btn ${est.status === '落札' ? 'active' : ''}" style="width:70px; padding:6px 0;" onclick="updateLotStatus(${safeArg}, '落札')">落札</button>
+          <button class="venue-btn ${est.status === '不落' ? 'active' : ''}" style="width:60px; padding:6px 0;" onclick="updateLotStatus(${safeArg}, '不落')">不落</button>
         </div>
-        <div style="font-size:11px; color:#38bdf8; cursor:pointer; margin-top:2px;" onclick="toggleCardDetail('${safeId}')">
+        <div style="font-size:11px; color:#38bdf8; cursor:pointer; margin-top:2px;" onclick="toggleCardDetail(${safeArg})">
           ▼ 内訳明細を見る (${est.items ? est.items.length : 0}品)
         </div>
         <div id="cardDetails_${safeId}" style="display:none; background:#0a0b0e; padding:6px; border-radius:6px; font-size:11px; margin-top:4px;">
