@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="伏見堂 原価符牒">
-  <meta name="app-version" content="2026.11.27-r3.1.2">
+  <meta name="app-version" content="2026.11.27-r3.1.3">
 
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -692,7 +692,7 @@
       <button class="btn-close" onclick="closeMasterModal()">✕</button>
     </div>
     <div style="background:#0a0b0e; border:1px solid #3f3f46; border-radius:10px; padding:12px; margin-bottom:14px;">
-      <div class="setting-title">📊 スプレッドシート連携（v2026.11.27-r3.1.2）</div>
+      <div class="setting-title">📊 スプレッドシート連携（v2026.11.27-r3.1.3）</div>
       <div style="display:flex; gap:6px; align-items:center;">
         <input type="text" id="inputGasUrl" placeholder="GAS WebアプリURL" style="flex:1; background:#181920; border:1px solid #52525b; color:#38bdf8; padding:8px; border-radius:6px; font-size:15px;">
         <button class="btn-header" style="background:#0284c7; border-color:#38bdf8; color:#fff;" onclick="connectAndPullMaster()">手動再取得</button>
@@ -719,7 +719,7 @@
 
 <script>
   // --- バージョン文字列ベースのPWA自動更新判定 ---
-  const APP_VERSION = "2026.11.27-r3.1.2";
+  const APP_VERSION = "2026.11.27-r3.1.3";
 
   (function checkPwaUpdate() {
     if(localStorage.getItem('fushimidou_pending_r3')) return;
@@ -1224,7 +1224,8 @@
       raw = buildRawCipher(num);
     }
     let code = raw.slice(0, 4);
-    if (code.length === 4 && code.endsWith("チ")) code = code.slice(0, 3);
+    // 「オ」で終えると全桁同じ数字を表すため、反復の後の末尾ゼロを明示する。
+    if (code.length === 4 && code.endsWith("チ") && !code.endsWith("オチ")) code = code.slice(0, 3);
     return code;
   }
 
