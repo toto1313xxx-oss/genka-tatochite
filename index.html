@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="伏見堂 原価符牒">
-  <meta name="app-version" content="2026.11.27-r3.1.5">
+  <meta name="app-version" content="2026.11.27-r3.1.6">
 
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -697,7 +697,7 @@
       <button class="btn-close" onclick="closeMasterModal()">✕</button>
     </div>
     <div style="background:#0a0b0e; border:1px solid #3f3f46; border-radius:10px; padding:12px; margin-bottom:14px;">
-      <div class="setting-title">📊 スプレッドシート連携（v2026.11.27-r3.1.5）</div>
+      <div class="setting-title">📊 スプレッドシート連携（v2026.11.27-r3.1.6）</div>
       <div style="display:flex; gap:6px; align-items:center;">
         <input type="text" id="inputGasUrl" placeholder="GAS WebアプリURL" style="flex:1; background:#181920; border:1px solid #52525b; color:#38bdf8; padding:8px; border-radius:6px; font-size:15px;">
         <button class="btn-header" style="background:#0284c7; border-color:#38bdf8; color:#fff;" onclick="connectAndPullMaster()">手動再取得</button>
@@ -724,7 +724,7 @@
 
 <script>
   // --- バージョン文字列ベースのPWA自動更新判定 ---
-  const APP_VERSION = "2026.11.27-r3.1.5";
+  const APP_VERSION = "2026.11.27-r3.1.6";
 
   (function checkPwaUpdate() {
     if(localStorage.getItem('fushimidou_pending_r3')) return;
@@ -1366,7 +1366,7 @@
             itemDiv.innerHTML = `
               <div>
                 <span style="font-weight:bold; color:#fff;">${escapeHtml(r.itemName)}</span>
-                <span style="color:#94a3b8; font-size:10px;">${escapeHtml(qtyLabel)} / ${(r.actualYen / 1000).toFixed(1)}k [${escapeHtml(r.cipher)}]</span>
+                <span style="color:#94a3b8; font-size:10px;">${escapeHtml(qtyLabel)} / ${(r.actualYen / 1000).toFixed(1)}千 [${escapeHtml(r.cipher)}]</span>
               </div>
               <button class="btn-record-del" onclick="deleteProgressRecord(${escapeHtml(JSON.stringify(String(r.recordId)))}, this)">削除</button>
             `;
@@ -1627,7 +1627,7 @@
       }
 
       const detailsHtml = (est.items || []).map(i =>
-        `<div>・${escapeHtml(i.itemName)}: ${escapeHtml(formatEstimateItemAmount(i))} (${Number(i.subtotalThousand).toFixed(1)}k)</div>`
+        `<div>・${escapeHtml(i.itemName)}: ${escapeHtml(formatEstimateItemAmount(i))} (${Number(i.subtotalThousand).toFixed(1)}千)</div>`
       ).join('');
 
       card.innerHTML = `
@@ -1759,7 +1759,7 @@
       arrow.textContent = '▼';
       document.getElementById('refItemCount').textContent = lot.items.length;
       list.innerHTML = lot.items.map(i =>
-        `<div>・${escapeHtml(i.itemName)}: ${escapeHtml(formatEstimateItemAmount(i))} (${Number(i.subtotalThousand).toFixed(1)}k)</div>`
+        `<div>・${escapeHtml(i.itemName)}: ${escapeHtml(formatEstimateItemAmount(i))} (${Number(i.subtotalThousand).toFixed(1)}千)</div>`
       ).join('');
     } else {
       box.style.display = 'none';
