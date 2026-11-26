@@ -801,10 +801,11 @@
   }
 
   // --- GAS連携情報 & 旧URLからの自動移行 ---
-  const HARDCODED_GAS_URL = "https://script.google.com/macros/s/AKfycbwzUWbf4uABTnk2SypyL1Tm8krzIWf4mBE4ft8HGIcd3yZ8xWZpf3kRZdo8auvNEilv/exec";
+  const PREVIOUS_GAS_URL = "https://script.google.com/macros/s/AKfycbwzUWbf4uABTnk2SypyL1Tm8krzIWf4mBE4ft8HGIcd3yZ8xWZpf3kRZdo8auvNEilv/exec";
+  const HARDCODED_GAS_URL = "https://script.google.com/macros/s/AKfycbyhXhYRSfQ-1OAi8AUnIZmc_NuWwksseZH_pSX8JS7-M1i9whcLI3T9oXTEtx0HDIMbDA/exec";
   const LEGACY_GAS_URL = "https://script.google.com/macros/s/AKfycbyRi5dBdk7ip0FoPMP47Nv74Mt_WQvi1_hfRv6E0-WD5WkhgpBH5nO1CMMc5pzly7EKtA/exec";
   let storedGasUrl = localStorage.getItem('fushimidou_gas_url');
-  if (!storedGasUrl || storedGasUrl === LEGACY_GAS_URL) {
+  if (!storedGasUrl || storedGasUrl === LEGACY_GAS_URL || storedGasUrl === PREVIOUS_GAS_URL) {
     storedGasUrl = HARDCODED_GAS_URL;
     localStorage.setItem('fushimidou_gas_url', HARDCODED_GAS_URL);
   }
