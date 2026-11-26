@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="伏見堂 原価符牒">
-  <meta name="app-version" content="2026.11.27-r3.1.4">
+  <meta name="app-version" content="2026.11.27-r3.1.5">
 
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -214,24 +214,29 @@
 
     /* 見積積算リスト & カード */
     .estimate-summary-card {
-      background: radial-gradient(circle at 50% 30%, #17202a 0%, #0c0e12 100%);
-      border-radius: 14px; padding: 14px; border: 2px solid #0284c7;
-      display: flex; flex-direction: column; gap: 8px;
+      background: linear-gradient(130deg,#fff9eb,#eee4cf);
+      border: 1px solid #be9c5e; border-top: 5px solid #bd9851;
+      border-radius: 6px 6px 16px 16px; padding: clamp(14px,4vw,24px);
+      color: #342b21; box-shadow: 0 8px 24px #0005;
     }
-    .rate-btn-group { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
-    .rate-btn { background: #1e293b; border: 1px solid #475569; color: #cbd5e1; padding: 5px 8px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; }
-    .rate-btn.active { background: #0284c7; border-color: #38bdf8; color: #fff; }
-    .rate-custom-input { width: 44px; background: #0a0b0e; border: 1px solid #475569; color: #f8fafc; font-size: 15px; text-align: center; border-radius: 6px; padding: 4px; }
-
-    .est-total-row { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px dashed #334155; padding-bottom: 6px; }
-    .est-total-val { font-size: 26px; font-weight: 900; color: #38bdf8; }
-    .est-limit-row { display: flex; justify-content: space-between; align-items: baseline; }
-    .est-limit-val { font-size: 20px; font-weight: 900; color: #fef08a; }
-
-    .est-item-table { width: 100%; border-collapse: collapse; font-size: 15px; margin-top: 6px; }
-    .est-item-table th { color: #a1a1aa; text-align: left; padding: 4px 6px; border-bottom: 1px solid #27272a; }
-    .est-item-table td { padding: 8px 6px; border-bottom: 1px solid #1c1d24; color: #f8fafc; }
-    .btn-row-remove { background: #7f1d1d; border: none; color: #fff; width: 22px; height: 22px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    .sheet-heading,.sheet-total,.sheet-limit { display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; }
+    .sheet-heading { border-bottom: 3px double #a18b65; padding-bottom: 10px; }
+    .sheet-heading h2 { font: 800 26px/1.4 'Shippori Mincho',serif; letter-spacing:.08em; }
+    #sheetVenue,#sheetLot { overflow-wrap:anywhere; }
+    #sheetLot:not(:empty) { margin-top:12px; font-size:18px; font-weight:700; }
+    .est-item-table { width:100%; margin:14px 0; border-collapse:collapse; font-size:15px; }
+    .est-item-table th,.est-item-table td { padding:8px 3px; text-align:left; border-bottom:1px solid #cbbda4; overflow-wrap:anywhere; }
+    .est-item-table th { color:#685637; font-size:14px; }
+    .est-item-table th:nth-child(3),.est-item-table .sheet-subtotal { text-align:right; font-variant-numeric:tabular-nums; }
+    .btn-row-remove { width:44px; min-height:44px; color:#794539; border:0; background:transparent; cursor:pointer; }
+    .sheet-total strong { font-size:clamp(25px,7vw,36px); }
+    .sheet-rate { margin:16px 0; padding-top:12px; border-top:1px solid #bbaa8d; }
+    .rate-btn-group { display:flex; align-items:center; flex-wrap:wrap; gap:5px; margin-top:6px; }
+    .rate-btn,.rate-custom-input { min-height:44px; border:1px solid #98896f; border-radius:7px; background:#fffcf5; color:#443a2b; font-size:16px; padding:4px 9px; }
+    .rate-btn.active { background:#433721; color:#fff5d9; }
+    .rate-custom-input { width:68px; }
+    .sheet-limit { background:#393023; color:#fff4d6; border-radius:6px; padding:12px; }
+    .sheet-limit strong { font-size:22px; }
 
     /* 下見一覧カード */
     .estimate-card {
@@ -344,6 +349,20 @@
       .input-group { min-width: 0; }
       .grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
     }
+    .input-group label,.bid-label { display:block; font-size:16px; color:#eadcc4; margin-bottom:6px; font-weight:650; }
+    .input-group input, .other-input-row input, .custom-venue-input, .bid-actions input, body .master-row input, body .master-row select {
+      width:100%; min-height:48px; padding:10px; background:#fff9ea; border:1px solid #bda77a;
+      color:#292317; border-radius:8px; font-size:18px; font-weight:600; }
+    .input-group input::placeholder,.other-input-row input::placeholder,.bid-actions input::placeholder { color:#776d60; font-weight:400; }
+    .input-group input.numeric,.bid-actions input { font-size:20px; text-align:right; }
+    .weight-box .weight-input { min-height:58px; background:#fff9ea; color:#2d2519; font-size:28px; padding-right:80px; }
+    .weight-box .unit-text { color:#665638; }
+    .estimate-card { border-left:4px solid #bd9959; padding:16px; gap:12px; }
+    .est-card-title { font-size:20px; overflow-wrap:anywhere; }
+    .bid-actions { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:6px; }
+    .bid-label { margin:6px 0 0; }
+    #modeEstCalcView .btn-action-blue { background:#393328; border-color:#9c8254; color:#fff0d0; min-height:48px; }
+    .other-input-row { grid-template-columns: minmax(0,1.3fr) minmax(0,1fr); }
   </style>
 </head>
 <body>
@@ -439,17 +458,17 @@
       <input type="text" id="customVenueInput" class="custom-venue-input" placeholder="会場名を入力してください">
 
       <div class="input-group">
-        <label>山の名前（ロット名）</label>
+        <label for="lotName">山の名前（ロット名）</label>
         <input type="text" id="lotName" placeholder="例: 象牙山#1">
       </div>
 
       <div class="lot-row-2col">
         <div class="input-group">
-          <label>総買値 (千円)</label>
+          <label for="buyPrice">総買値 (千円)</label>
           <input type="number" id="buyPrice" class="numeric" placeholder="0" inputmode="decimal" oninput="calculate()">
         </div>
         <div class="input-group">
-          <label>全体見積り (千円)</label>
+          <label for="lotEstimate">全体見積り (千円)</label>
           <input type="number" id="lotEstimate" class="numeric" placeholder="0" inputmode="decimal" oninput="calculate()">
         </div>
       </div>
@@ -471,7 +490,7 @@
 
     <!-- 品目グリッド -->
     <div>
-      <div class="section-title">品目を選択（末尾に「その他」あり）</div>
+      <div class="section-title">品目を選択</div>
       <div class="grid" id="itemGrid"></div>
 
       <!-- その他（自由入力）パネル -->
@@ -523,7 +542,7 @@
   <!-- ======================== モード2：下見見積り積算 ======================== -->
   <div id="modeEstCalcView" style="display:none; flex-direction:column; gap:12px;">
     <div class="lot-card">
-      <span class="input-label">見積もり対象</span>
+      <span class="input-label">仕入先・会場</span>
       <div class="venue-tabs">
         <button class="venue-btn active" onclick="selectEstVenue('神栄会', this)">神栄会</button>
         <button class="venue-btn" onclick="selectEstVenue('聚宝会', this)">聚宝会</button>
@@ -534,14 +553,14 @@
       <input type="text" id="estCustomVenueInput" class="custom-venue-input" placeholder="会場名を入力してください">
 
       <div class="input-group">
-        <label>ロット名（山の名前）</label>
+        <label for="estLotName">ロット名（山の名前）</label>
         <input type="text" id="estLotName" placeholder="例: 象牙山#1">
       </div>
     </div>
 
     <!-- 品目グリッド（見積用） -->
     <div>
-      <div class="section-title">品目を選択（末尾に「その他」あり）</div>
+      <div class="section-title">品目を選択</div>
       <div class="grid" id="estItemGrid"></div>
 
       <!-- その他（自由入力）パネル（下見用） -->
@@ -573,49 +592,35 @@
           <button class="btn-inline-clear" onclick="document.getElementById('estAmountInput').value='';">✕</button>
         </div>
       </div>
-      <button class="btn-action-blue" style="width:100%; padding:10px;" onclick="addEstimateItem()">＋ リストに見積追加</button>
+      <button class="btn-action-blue" style="width:100%; padding:10px;" onclick="addEstimateItem()">＋ 見積明細に追加</button>
     </div>
 
     <!-- 見積積算リスト & 掛け率計算カード -->
-    <div class="estimate-summary-card">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-        <span style="font-size:14px; color:#38bdf8; font-weight:bold;">入札上限 掛け率</span>
-        <div class="rate-btn-group">
+    <section class="estimate-summary-card" aria-labelledby="estimateSheetTitle">
+      <header class="sheet-heading"><h2 id="estimateSheetTitle">下見見積書</h2><span id="sheetVenue"></span></header>
+      <p id="sheetLot"></p>
+      <table class="est-item-table">
+        <thead><tr><th>品目</th><th>数量</th><th>小計</th><th aria-label="削除"></th></tr></thead>
+        <tbody id="estItemTableBody"></tbody>
+      </table>
+      <div class="sheet-total"><span>見積総額</span><strong><span id="estTotalYen">0</span> 円</strong></div>
+      <div class="sheet-rate"><span>入札上限の掛け率</span><div class="rate-btn-group">
           <button type="button" class="rate-btn" onclick="setEstLimitRate(null, this)">なし</button>
           <button type="button" class="rate-btn" onclick="setEstLimitRate(0.6, this)">60%</button>
           <button type="button" class="rate-btn" onclick="setEstLimitRate(0.7, this)">70%</button>
           <button type="button" class="rate-btn" onclick="setEstLimitRate(0.75, this)">75%</button>
           <button type="button" class="rate-btn active" onclick="setEstLimitRate(0.8, this)">80%</button>
           <button type="button" class="rate-btn" onclick="setEstLimitRate(0.85, this)">85%</button>
-          <input type="number" id="customEstRate" class="rate-custom-input" placeholder="直接" inputmode="numeric" oninput="onCustomRateInput(this)">
+          <input type="number" id="customEstRate" class="rate-custom-input" aria-label="任意の掛け率" placeholder="任意" inputmode="numeric" oninput="onCustomRateInput(this)">
           <span style="font-size:14px; color:#a1a1aa;">%</span>
-        </div>
-      </div>
-
-      <div class="est-total-row">
-        <span style="font-size:15px; color:#a1a1aa;">見積総額:</span>
-        <span class="est-total-val"><span id="estTotalThousand">0.0</span> 千円 <span style="font-size:13px; color:#94a3b8;">(<span id="estTotalYen">0</span>円)</span></span>
-      </div>
-
-      <div class="est-limit-row">
-        <span style="font-size:15px; color:#a1a1aa;">入札上限目安:</span>
-        <span class="est-limit-val"><span id="estLimitThousand">0.0</span> 千円 <span style="font-size:13px; color:#94a3b8;">(<span id="estLimitYen">0</span>円)</span></span>
-      </div>
-
-      <div style="max-height:160px; overflow-y:auto;">
-        <table class="est-item-table">
-          <thead>
-            <tr><th>品目</th><th>数量</th><th style="text-align:right;">小計</th><th></th></tr>
-          </thead>
-          <tbody id="estItemTableBody"></tbody>
-        </table>
-      </div>
-    </div>
+        </div></div>
+      <div class="sheet-limit"><span>入札上限目安</span><strong id="estLimitYen">設定なし</strong></div>
+    </section>
 
     <!-- アクションボタン -->
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-      <button class="btn-action-blue" onclick="shareEstimateText()">📤 OS共有メニュー</button>
-      <button class="btn-save-row" id="btnSaveEstimate" onclick="saveEstimateToSheet()">📊 シートへ保存</button>
+      <button class="btn-action-blue" onclick="shareEstimateText()">見積を共有</button>
+      <button class="btn-save-row" id="btnSaveEstimate" onclick="saveEstimateToSheet()">見積を保存</button>
     </div>
     <button class="btn-next-only" style="padding:10px;" onclick="clearEstimateList()">積算を全クリアして次へ</button>
   </div>
@@ -623,7 +628,7 @@
   <!-- ======================== モード3：見積一覧（落札結果 & 責任者クローズ） ======================== -->
   <div id="modeEstListView" style="display:none; flex-direction:column; gap:10px;">
     <div style="display:flex; justify-content:space-between; align-items:center; padding:0 2px;">
-      <span style="font-size:15px; color:#a1a1aa;">スプレッドシート上の下見見積り一覧</span>
+      <span style="font-size:15px; color:#a1a1aa;">保存した見積</span>
       <button class="btn-header" onclick="fetchEstimatesList(true)">🔄 再読み込み</button>
     </div>
     <div id="estimatesListContainer">読み込み中...</div>
@@ -692,7 +697,7 @@
       <button class="btn-close" onclick="closeMasterModal()">✕</button>
     </div>
     <div style="background:#0a0b0e; border:1px solid #3f3f46; border-radius:10px; padding:12px; margin-bottom:14px;">
-      <div class="setting-title">📊 スプレッドシート連携（v2026.11.27-r3.1.4）</div>
+      <div class="setting-title">📊 スプレッドシート連携（v2026.11.27-r3.1.5）</div>
       <div style="display:flex; gap:6px; align-items:center;">
         <input type="text" id="inputGasUrl" placeholder="GAS WebアプリURL" style="flex:1; background:#181920; border:1px solid #52525b; color:#38bdf8; padding:8px; border-radius:6px; font-size:15px;">
         <button class="btn-header" style="background:#0284c7; border-color:#38bdf8; color:#fff;" onclick="connectAndPullMaster()">手動再取得</button>
@@ -719,7 +724,7 @@
 
 <script>
   // --- バージョン文字列ベースのPWA自動更新判定 ---
-  const APP_VERSION = "2026.11.27-r3.1.4";
+  const APP_VERSION = "2026.11.27-r3.1.5";
 
   (function checkPwaUpdate() {
     if(localStorage.getItem('fushimidou_pending_r3')) return;
@@ -1479,7 +1484,12 @@
     renderEstimateSummary();saveEstimateDraft();
   }
 
+  function updateEstimateHeading() {
+    $('sheetVenue').textContent = getActiveEstVenueName();
+    $('sheetLot').textContent = $('estLotName').value.trim();
+  }
   function renderEstimateSummary() {
+    updateEstimateHeading();
     const tbody = document.getElementById('estItemTableBody');
     tbody.innerHTML = '';
     let totalThousand = 0;
@@ -1490,24 +1500,24 @@
       tr.innerHTML = `
         <td>${escapeHtml(item.itemName)}</td>
         <td>${escapeHtml(formatEstimateItemAmount(item))}</td>
-        <td style="text-align:right; font-weight:bold; color:#38bdf8;">${item.subtotalThousand.toFixed(1)}k</td>
-        <td style="text-align:right;"><button class="btn-row-remove" onclick="removeEstimateItem(${idx})">✕</button></td>
+        <td class="sheet-subtotal">${Math.round(item.subtotalThousand * 1000).toLocaleString()} 円</td>
+        <td style="text-align:right;"><button class="btn-row-remove" aria-label="この品目を削除" onclick="removeEstimateItem(${idx})">✕</button></td>
       `;
       tbody.appendChild(tr);
     });
 
     const totalYen = Math.round(totalThousand * 1000);
-    document.getElementById('estTotalThousand').textContent = totalThousand.toFixed(1);
+
     document.getElementById('estTotalYen').textContent = totalYen.toLocaleString();
 
     if (currentEstLimitRate === null) {
-      document.getElementById('estLimitThousand').textContent = '----';
+
       document.getElementById('estLimitYen').textContent = '設定なし';
     } else {
       const limitThousand = totalThousand * currentEstLimitRate;
       const limitYen = Math.round(limitThousand * 1000);
-      document.getElementById('estLimitThousand').textContent = limitThousand.toFixed(1);
-      document.getElementById('estLimitYen').textContent = limitYen.toLocaleString();
+
+      document.getElementById('estLimitYen').textContent = limitYen.toLocaleString() + ' 円';
     }
   }
 
@@ -1632,8 +1642,9 @@
           <span style="color:#a1a1aa;">見積総額:</span>
           <span style="font-weight:bold; color:#38bdf8;">${(est.totalEstYen / 1000).toFixed(1)} 千円</span>
         </div>
-        <div style="display:flex; gap:6px; align-items:center; margin-top:4px;">
-          <input type="number" id="cardBuyPrice_${safeId}" placeholder="落札額(千円)" value="${buyPriceThousand}" inputmode="decimal" style="flex:1; background:#0a0b0e; border:1px solid #3f3f46; color:#fef08a; padding:6px; border-radius:6px; font-size:13px; text-align:right;">
+        <label class="bid-label" for="cardBuyPrice_${safeId}">落札額（千円）</label>
+        <div class="bid-actions">
+          <input type="number" id="cardBuyPrice_${safeId}" placeholder="落札額(千円)" value="${buyPriceThousand}" inputmode="decimal">
           <button class="venue-btn ${est.status === '落札' ? 'active' : ''}" style="width:70px; padding:6px 0;" onclick="updateLotStatus(${safeArg}, '落札')">落札</button>
           <button class="venue-btn ${est.status === '不落' ? 'active' : ''}" style="width:60px; padding:6px 0;" onclick="updateLotStatus(${safeArg}, '不落')">不落</button>
         </div>
@@ -1973,6 +1984,8 @@
     $('customEstRate').value=currentEstLimitRate===null?'':Math.round(currentEstLimitRate*100);
     document.querySelectorAll('.rate-btn').forEach(b=>b.classList.remove('active'));
   }
+  $('modeEstCalcView').addEventListener('input', updateEstimateHeading);
+  $('modeEstCalcView').addEventListener('click', updateEstimateHeading);
   $('estLotName').addEventListener('input',saveEstimateDraft);
   $('estCustomVenueInput').addEventListener('input',saveEstimateDraft);
   $('modeEstCalcView').addEventListener('click',()=>saveEstimateDraft());
