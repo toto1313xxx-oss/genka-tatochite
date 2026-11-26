@@ -3,7 +3,7 @@
  * Append-only journal. No existing sheet is overwritten.
  * Run setupFushimidou once in a spreadsheet-bound Apps Script.
  */
-const FS = {sheet:'伏見堂_r3_操作台帳', version:'2026.11.27-r3', maxPayload:40000};
+const FS = {sheet:'伏見堂_r3_操作台帳', version:'2026.11.27-r3.1.1', maxPayload:40000};
 const HEAD = ['サーバー日時','操作ID','操作','担当区分','対象ID','山ID','会場','山名','品目','数量','単位','金額(円)','状態','処理内容JSON'];
 
 function setupFushimidou() {
@@ -23,12 +23,9 @@ function setupFushimidou() {
     }
     checkHeader_(sh);
     props.setProperty('FS_SPREADSHEET_ID',ss.getId());
-    if(!props.getProperty('FS_MANAGER_TOKEN')) props.setProperty('FS_MANAGER_TOKEN',makeToken_());
-    if(!props.getProperty('FS_STAFF_TOKEN')) props.setProperty('FS_STAFF_TOKEN',makeToken_());
-    return '設定完了。プロジェクトの設定 → スクリプト プロパティで各トークンを確認してください。';
+    return '設定完了。';
   } finally {lock.releaseLock();}
 }
-function makeToken_(){return Utilities.getUuid().replace(/-/g,'')+Utilities.getUuid().replace(/-/g,'');}
 function checkHeader_(sh){
   if(JSON.stringify(sh.getRange(1,1,1,HEAD.length).getValues()[0])!==JSON.stringify(HEAD))throw Error('台帳の列構成が変更されています');
 }
@@ -38,16 +35,6 @@ function journal_(){
   const sh=SpreadsheetApp.openById(id).getSheetByName(FS.sheet);
   if(!sh)throw Error('台帳が見つかりません');
   checkHeader_(sh);return sh;
-}
-function equalToken_(a,b){
-  if(typeof a!=='string'||typeof b!=='string'||a.length!==b.length||a.length<32)return false;
-  let diff=0;for(let i=0;i<a.length;i++)diff|=a.charCodeAt(i)^b.charCodeAt(i);return diff===0;
-}
-function role_(token){
-  const p=PropertiesService.getScriptProperties();
-  if(equalToken_(token,p.getProperty('FS_MANAGER_TOKEN')))return 'manager';
-  if(equalToken_(token,p.getProperty('FS_STAFF_TOKEN')))return 'staff';
-  throw Error('認証に失敗しました');
 }
 function output_(data,callback){
   const json=JSON.stringify(data).replace(/[\u2028\u2029]/g,c=>'\\u'+c.charCodeAt(0).toString(16));
@@ -65,7 +52,7 @@ function withLock_(fn){
 function doGet(e){
   const p=e&&e.parameter||{};
   try{
-    const role=role_(p.token);
+    const role='shared';
     const result=withLock_(()=>read_(load_(journal_()),p,role));
     return output_(Object.assign({status:'success'},result),p.callback);
   }catch(err){return output_({status:'error',message:String(err.message||err)},p.callback);}
@@ -74,7 +61,7 @@ function doPost(e){
   try{
     const body=e&&e.postData&&e.postData.contents||'';
     if(body.length>FS.maxPayload+2000)throw Error('送信内容が大きすぎます');
-    const p=JSON.parse(body);const role=role_(p.token);delete p.token;
+    const p=JSON.parse(body);const role='shared';delete p.token;
     const result=withLock_(()=>{
       const sh=journal_();
       try{return write_(sh,p,role);}
@@ -123,7 +110,7 @@ function read_(s,p,role){
     case 'getLotProgress':return {records:Array.from(s.cost.values()).filter(r=>!r.deleted&&r.lotId===String(p.lotId||'')),role};
     case 'getOperation':{
       const op=s.ops.get(String(p.operationId||''));
-      const own=op&&op.role===role;
+      const own=!!op;
       if(own&&op.action==='rejected')return {committed:false,rejected:true,action:op.event.data.action,message:op.event.data.message};
       return {committed:!!own,action:own?op.action:null};
     }
@@ -140,7 +127,6 @@ function id_(v,label='ID'){
 function num_(v,label,integer=false,zero=false){
   if(typeof v!=='number'||!Number.isFinite(v)||(zero?v<0:v<=0)||v>1e12||(integer&&!Number.isSafeInteger(v)))throw Error(label+'が不正です');return v;
 }
-function manager_(role){if(role!=='manager')throw Error('責任者権限が必要です');}
 function subtotal_(rate,amount,unit){
   if(!['kg','pcs','flat'].includes(unit))throw Error('単位が不正です');
   num_(rate,'単価');num_(amount,'数量',unit==='pcs'||unit==='flat');
@@ -159,7 +145,7 @@ function write_(sh,p,role){
   const request=canonical_(p);
   if(s.ops.has(op)){
     const old=s.ops.get(op);
-    if(old.role!==role||old.request!==request)throw Error('操作IDが競合しています');
+    if(old.request!==request)throw Error('操作IDが競合しています');
     return {operationId:op,duplicate:true};
   }
   const at=new Date().toISOString();
@@ -205,7 +191,6 @@ function write_(sh,p,role){
       d={recordId,date:at,auction,lotName,itemName,unitType,amount,rate,buyPriceYen,lotEstimateYen,ratioPercent:(buyPriceYen/lotEstimateYen*100).toFixed(1)+'%',indivEstYen,actualYen,cipher,lotId,deleted:false};break;
     }
     case 'deleteCostRecord':{
-      manager_(role);
       const r=s.cost.get(id_(p.recordId));
       if(!r||r.deleted)throw Error('有効な原価登録がありません');
       if(r.lotId&&s.est.get(r.lotId)?.status!=='落札')throw Error('完了済みの山は差戻し後に取消してください');
@@ -221,7 +206,6 @@ function write_(sh,p,role){
         if(p.expectedRemaining!==remaining)throw Error('残額が変更されました。再確認してください');
         d={id,status,remainingYen:remaining,completedAt:at};
       }else{
-        manager_(role);
         const allowed={'下見中':['落札','不落'],'落札':['落札','不落'],'不落':['落札','削除'],'完了':['落札','削除']};
         if(!(allowed[lot.status]||[]).includes(status)||p.expectedStatus!==lot.status)throw Error('状態が変更されました。再取得してください');
         if(status==='不落'&&liveCost_(s,id).length)throw Error('原価登録のある山は不落にできません');
@@ -233,7 +217,6 @@ function write_(sh,p,role){
       }break;
     }
     case 'updateMaster':{
-      manager_(role);
       if(p.expectedRevision!==s.masterRevision)throw Error('マスタが変更されました。再取得してください');
       if(!Array.isArray(p.items)||!p.items.length||p.items.length>300)throw Error('マスタ件数が不正です');
       const items=p.items.map(i=>{
