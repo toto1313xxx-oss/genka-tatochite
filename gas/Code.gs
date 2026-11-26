@@ -75,7 +75,21 @@ function doPost(e){
     const body=e&&e.postData&&e.postData.contents||'';
     if(body.length>FS.maxPayload+2000)throw Error('送信内容が大きすぎます');
     const p=JSON.parse(body);const role=role_(p.token);delete p.token;
-    const result=withLock_(()=>write_(journal_(),p,role));
+    const result=withLock_(()=>{
+      const sh=journal_();
+      try{return write_(sh,p,role);}
+      catch(err){
+        // Record validation failures only when the operation is demonstrably absent.
+        const op=id_(p.operationId,'操作ID');
+        const state=load_(sh);
+        if(state.ops.has(op))throw err;
+        const at=new Date().toISOString();
+        const event={operationId:op,action:'rejected',at,data:{action:p.action,message:String(err.message||err).slice(0,500)},request:''};
+        sh.appendRow([at,op,'rejected',role,'','','','','','','','','拒否',JSON.stringify(event)]);
+        SpreadsheetApp.flush();
+        return {operationId:op,rejected:true};
+      }
+    });
     return output_(Object.assign({status:'success'},result));
   }catch(err){return output_({status:'error',message:String(err.message||err)});}
 }
@@ -98,6 +112,7 @@ function apply_(s,e){
     case 'deleteCostRecord':s.cost.set(d.recordId,Object.assign({},s.cost.get(d.recordId),{deleted:true,deletedAt:e.at}));break;
     case 'updateEstimateStatus':s.est.set(d.id,Object.assign({},s.est.get(d.id),d));break;
     case 'updateMaster':s.master=d.items;s.masterRevision=e.operationId;break;
+    case 'rejected':break;
     default:throw Error('不明な台帳操作');
   }
 }
@@ -108,7 +123,9 @@ function read_(s,p,role){
     case 'getLotProgress':return {records:Array.from(s.cost.values()).filter(r=>!r.deleted&&r.lotId===String(p.lotId||'')),role};
     case 'getOperation':{
       const op=s.ops.get(String(p.operationId||''));
-      return {committed:!!op&&op.role===role,action:op&&op.role===role?op.action:null};
+      const own=op&&op.role===role;
+      if(own&&op.action==='rejected')return {committed:false,rejected:true,action:op.event.data.action,message:op.event.data.message};
+      return {committed:!!own,action:own?op.action:null};
     }
     default:throw Error('未対応の取得操作');
   }
