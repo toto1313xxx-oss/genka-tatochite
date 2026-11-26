@@ -2,12 +2,12 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#0a0a0c">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="伏見堂 原価符牒">
-  <meta name="app-version" content="2026.11.27-r3.1.1">
+  <meta name="app-version" content="2026.11.27-r3.1.2">
 
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -28,7 +28,7 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Mincho ProN", serif; -webkit-tap-highlight-color: transparent; }
     body { background-color: var(--bg-main); color: #e2e8f0; padding: 14px; min-height: 100vh; background-image: radial-gradient(circle at 50% 0%, #1c1a14 0%, #0c0d10 70%); }
-    .container { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+    .container { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
 
     /* 6桁PINロック */
     #lockScreen {
@@ -41,7 +41,7 @@
       background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       filter: drop-shadow(0 2px 10px rgba(191, 149, 63, 0.6)); margin-bottom: 6px;
     }
-    .lock-sub { font-size: 12px; color: #a1a1aa; letter-spacing: 3px; margin-bottom: 24px; }
+    .lock-sub { font-size: 15px; color: #a1a1aa; letter-spacing: 3px; margin-bottom: 24px; }
     .pin-dots { display: flex; gap: 14px; margin-bottom: 28px; }
     .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--gold-border); background: transparent; transition: all 0.15s ease; }
     .pin-dot.filled { background: var(--gold-text); border-color: #fef08a; box-shadow: 0 0 10px rgba(254, 240, 138, 0.8); }
@@ -59,16 +59,16 @@
     .header-bar { display: flex; justify-content: space-between; align-items: center; padding: 4px 2px 8px; border-bottom: 1px solid rgba(212, 175, 55, 0.25); }
     .logo-group { display: flex; flex-direction: column; }
     .fushimidou-logo {
-      font-family: 'Shippori Mincho', serif; font-size: 24px; font-weight: 900; letter-spacing: 5px;
+      font-family: 'Shippori Mincho', serif; font-size: clamp(26px,7vw,38px); font-weight: 900; letter-spacing: 3px;
       background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       filter: drop-shadow(0 2px 8px rgba(191, 149, 63, 0.5)); display: flex; align-items: center; gap: 6px;
     }
     .fushimidou-logo span.sub-title {
-      font-size: 11px; letter-spacing: 1px; color: #94a3b8; -webkit-text-fill-color: #94a3b8;
+      font-size: 14px; letter-spacing: 1px; color: #94a3b8; -webkit-text-fill-color: #94a3b8;
       font-weight: 600; border-left: 1px solid #475569; padding-left: 6px; margin-left: 2px;
     }
     .sync-status-badge {
-      font-size: 10px; color: #94a3b8; letter-spacing: 0.5px; margin-top: 1px; cursor: pointer;
+      font-size: 13px; color: #94a3b8; letter-spacing: 0.5px; margin-top: 1px; cursor: pointer;
       display: inline-flex; align-items: center; gap: 3px;
     }
     .sync-status-badge:hover { color: #fef08a; }
@@ -77,16 +77,16 @@
     .btn-header {
       background: linear-gradient(180deg, #272a34 0%, #181920 100%);
       border: 1px solid var(--gold-border); color: var(--gold-text); padding: 6px 10px; border-radius: 8px;
-      font-size: 12px; font-weight: bold; cursor: pointer;
+      font-size: 15px; font-weight: bold; cursor: pointer;
     }
     .btn-header.highlight {
       background: linear-gradient(135deg, #92661d 0%, #d4af37 100%); border-color: #fbf5b7; color: #0c0d10;
     }
 
     /* メインモード切替タブ */
-    .main-mode-tabs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; background: #08090b; padding: 4px; border-radius: 10px; border: 1px solid #27272a; }
+    .main-mode-tabs { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 4px; background: #08090b; padding: 4px; border-radius: 10px; border: 1px solid #27272a; }
     .main-tab-btn {
-      background: transparent; border: none; color: #a1a1aa; padding: 8px 4px; font-size: 12px; font-weight: bold;
+      background: transparent; border: none; color: #a1a1aa; padding: 8px 4px; font-size: 15px; font-weight: bold;
       border-radius: 6px; cursor: pointer; text-align: center;
     }
     .main-tab-btn.active {
@@ -96,12 +96,12 @@
 
     /* カード・入力コンポーネント */
     .lot-card { background: var(--card-bg); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; border: 1px solid rgba(212, 175, 55, 0.3); }
-    .input-label { display: block; font-size: 11px; color: #a1a1aa; margin-bottom: 5px; font-weight: bold; letter-spacing: 1px; }
+    .input-label { display: block; font-size: 16px; color: #ded6c6; margin-bottom: 5px; font-weight: bold; letter-spacing: 1px; }
 
     .venue-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 4px; }
     .venue-btn {
       background: #0a0b0e; border: 1px solid #3f3f46; color: #a1a1aa; padding: 8px 0; border-radius: 6px;
-      font-size: 12px; font-weight: bold; cursor: pointer; text-align: center;
+      font-size: 15px; font-weight: bold; cursor: pointer; text-align: center;
     }
     .venue-btn.active {
       background: linear-gradient(135deg, #92661d, #d4af37); color: #0c0d10; border-color: #fef08a; font-weight: 900;
@@ -113,13 +113,13 @@
     }
 
     .lot-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .input-group label { display: block; font-size: 11px; color: #a1a1aa; margin-bottom: 4px; font-weight: bold; }
+    .input-group label { display: block; font-size: 14px; color: #a1a1aa; margin-bottom: 4px; font-weight: bold; }
     .input-group input { width: 100%; background: #0a0b0e; border: 1px solid #3f3f46; color: #fef08a; padding: 8px 10px; border-radius: 8px; font-size: 15px; font-weight: bold; }
     .input-group input.numeric { text-align: right; font-size: 18px; }
 
     .ratio-bar {
       display: flex; justify-content: space-between; align-items: center; background: #0a0b0e;
-      border: 1px dashed rgba(212, 175, 55, 0.4); border-radius: 8px; padding: 6px 12px; font-size: 12px;
+      border: 1px dashed rgba(212, 175, 55, 0.4); border-radius: 8px; padding: 6px 12px; font-size: 15px;
     }
     .ratio-label { color: #a1a1aa; }
     .ratio-val { font-weight: bold; color: #fef08a; font-size: 14px; }
@@ -127,16 +127,16 @@
     /* 呼出中のステータスバー & 完了ボタン */
     .loaded-lot-status-bar {
       display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #0c2033;
-      border: 1px solid #0284c7; border-radius: 8px; padding: 6px 10px; font-size: 11px;
+      border: 1px solid #0284c7; border-radius: 8px; padding: 6px 10px; font-size: 14px;
     }
     .btn-complete-lot {
-      background: #059669; border: 1px solid #34d399; color: #fff; font-size: 11px; font-weight: bold;
+      background: #059669; border: 1px solid #34d399; color: #fff; font-size: 14px; font-weight: bold;
       padding: 4px 8px; border-radius: 6px; cursor: pointer; white-space: nowrap;
     }
 
     /* 山の進捗パネル */
     .progress-box {
-      background: #11141c; border: 1px solid #1e293b; border-radius: 10px; padding: 10px; font-size: 11px; display: flex; flex-direction: column; gap: 6px;
+      background: #11141c; border: 1px solid #1e293b; border-radius: 10px; padding: 10px; font-size: 14px; display: flex; flex-direction: column; gap: 6px;
     }
     .progress-stat-row { display: flex; justify-content: space-between; color: #cbd5e1; }
     .progress-stat-val { font-weight: bold; color: #38bdf8; }
@@ -147,19 +147,19 @@
       display: flex; justify-content: space-between; align-items: center; gap: 6px; background: #08090c; padding: 5px 8px; border-radius: 6px; border: 1px solid #1f242e;
     }
     .btn-record-del {
-      background: #7f1d1d; border: 1px solid #b91c1c; color: #fff; font-size: 10px; padding: 3px 8px; border-radius: 4px; cursor: pointer; white-space: nowrap;
+      background: #7f1d1d; border: 1px solid #b91c1c; color: #fff; font-size: 13px; padding: 3px 8px; border-radius: 4px; cursor: pointer; white-space: nowrap;
     }
     .btn-record-del:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* 参照内訳アコーディオン */
     .ref-details-box {
-      background: #0b0d11; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; font-size: 11px;
+      background: #0b0d11; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; font-size: 14px;
     }
     .ref-details-title { color: #38bdf8; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; }
     .ref-details-list { margin-top: 6px; display: none; flex-direction: column; gap: 3px; max-height: 120px; overflow-y: auto; }
 
     /* 品目グリッド */
-    .section-title { font-size: 12px; color: #d4af37; font-weight: bold; margin-bottom: 4px; letter-spacing: 1.5px; display: flex; align-items: center; gap: 4px; }
+    .section-title { font-size: 15px; color: #d4af37; font-weight: bold; margin-bottom: 4px; letter-spacing: 1.5px; display: flex; align-items: center; gap: 4px; }
     .section-title::before { content: '◆'; font-size: 9px; }
     .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 
@@ -175,8 +175,8 @@
       background: linear-gradient(135deg, #374151 0%, #1f2937 100%) !important;
       border: 1px dashed #9ca3af;
     }
-    .item-name { font-size: 14px; font-weight: bold; color: #ffffff; }
-    .item-rate { font-size: 11px; color: #fef08a; margin-top: 3px; font-weight: 700; }
+    .item-name { font-size: 17px; font-weight: bold; color: #ffffff; }
+    .item-rate { font-size: 14px; color: #fef08a; margin-top: 3px; font-weight: 700; }
 
     /* その他（自由入力）パネル */
     .other-custom-panel {
@@ -185,9 +185,9 @@
     .other-input-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 6px; }
     .other-input-row input { background: #0a0b0e; border: 1px solid #52525b; color: #fef08a; padding: 8px; border-radius: 6px; font-size: 13px; font-weight: bold; width: 100%; }
     .unit-switch-group { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
-    .unit-switch-btn { background: #1e293b; border: 1px solid #475569; color: #cbd5e1; padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: bold; }
+    .unit-switch-btn { background: #1e293b; border: 1px solid #475569; color: #cbd5e1; padding: 5px 10px; border-radius: 6px; font-size: 14px; cursor: pointer; font-weight: bold; }
     .unit-switch-btn.active { background: #0284c7; border-color: #38bdf8; color: #fff; }
-    .flat-mode-hint { font-size: 11px; color: #38bdf8; background: #0c2033; border: 1px dashed #0284c7; border-radius: 6px; padding: 6px 8px; }
+    .flat-mode-hint { font-size: 14px; color: #38bdf8; background: #0c2033; border: 1px dashed #0284c7; border-radius: 6px; padding: 6px 8px; }
 
     /* 計量 / 数量 入力カード */
     .weight-card { background: var(--card-bg); border-radius: 12px; padding: 12px; border: 1px solid rgba(212, 175, 55, 0.3); }
@@ -202,10 +202,10 @@
       border-radius: 14px; padding: 16px 14px; border: 2px solid #b8860b;
       box-shadow: 0 0 20px rgba(184, 134, 11, 0.3); display: flex; flex-direction: column; align-items: center; text-align: center;
     }
-    .result-sub { font-size: 11px; color: #a1a1aa; margin-bottom: 2px; }
+    .result-sub { font-size: 14px; color: #a1a1aa; margin-bottom: 2px; }
     .result-values { font-size: 15px; color: #e2e8f0; margin-bottom: 8px; }
     .result-values span { font-weight: bold; color: #38bdf8; }
-    .cipher-label { font-size: 11px; font-weight: 900; letter-spacing: 4px; color: #b8860b; margin-top: 2px; }
+    .cipher-label { font-size: 14px; font-weight: 900; letter-spacing: 4px; color: #b8860b; margin-top: 2px; }
     .cipher-badge {
       font-family: 'Shippori Mincho', serif; font-size: 44px; font-weight: 900; letter-spacing: 8px;
       background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
@@ -219,16 +219,16 @@
       display: flex; flex-direction: column; gap: 8px;
     }
     .rate-btn-group { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
-    .rate-btn { background: #1e293b; border: 1px solid #475569; color: #cbd5e1; padding: 5px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
+    .rate-btn { background: #1e293b; border: 1px solid #475569; color: #cbd5e1; padding: 5px 8px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; }
     .rate-btn.active { background: #0284c7; border-color: #38bdf8; color: #fff; }
-    .rate-custom-input { width: 44px; background: #0a0b0e; border: 1px solid #475569; color: #f8fafc; font-size: 12px; text-align: center; border-radius: 6px; padding: 4px; }
+    .rate-custom-input { width: 44px; background: #0a0b0e; border: 1px solid #475569; color: #f8fafc; font-size: 15px; text-align: center; border-radius: 6px; padding: 4px; }
 
     .est-total-row { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px dashed #334155; padding-bottom: 6px; }
     .est-total-val { font-size: 26px; font-weight: 900; color: #38bdf8; }
     .est-limit-row { display: flex; justify-content: space-between; align-items: baseline; }
     .est-limit-val { font-size: 20px; font-weight: 900; color: #fef08a; }
 
-    .est-item-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
+    .est-item-table { width: 100%; border-collapse: collapse; font-size: 15px; margin-top: 6px; }
     .est-item-table th { color: #a1a1aa; text-align: left; padding: 4px 6px; border-bottom: 1px solid #27272a; }
     .est-item-table td { padding: 8px 6px; border-bottom: 1px solid #1c1d24; color: #f8fafc; }
     .btn-row-remove { background: #7f1d1d; border: none; color: #fff; width: 22px; height: 22px; border-radius: 4px; cursor: pointer; font-weight: bold; }
@@ -239,8 +239,8 @@
     }
     .est-card-head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #27272a; padding-bottom: 6px; }
     .est-card-title { font-weight: bold; color: var(--gold-text); font-size: 14px; }
-    .est-card-date { font-size: 10px; color: #94a3b8; margin-top: 2px; }
-    .status-badge { font-size: 11px; padding: 3px 8px; border-radius: 12px; font-weight: bold; white-space: nowrap; }
+    .est-card-date { font-size: 13px; color: #94a3b8; margin-top: 2px; }
+    .status-badge { font-size: 14px; padding: 3px 8px; border-radius: 12px; font-weight: bold; white-space: nowrap; }
     .status-badge.wait { background: #334155; color: #94a3b8; }
     .status-badge.won { background: #065f46; color: #6ee7b7; border: 1px solid #10b981; }
     .status-badge.lost { background: #7f1d1d; color: #fca5a5; }
@@ -251,10 +251,10 @@
       display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; border-top: 1px dashed #27272a; padding-top: 8px; margin-top: 4px;
     }
     .btn-mgr-rollback {
-      background: #1e293b; border: 1px solid #64748b; color: #cbd5e1; font-size: 11px; font-weight: bold; padding: 6px 10px; border-radius: 6px; cursor: pointer;
+      background: #1e293b; border: 1px solid #64748b; color: #cbd5e1; font-size: 14px; font-weight: bold; padding: 6px 10px; border-radius: 6px; cursor: pointer;
     }
     .btn-mgr-archive {
-      background: #7f1d1d; border: 1px solid #ef4444; color: #fecaca; font-size: 11px; font-weight: bold; padding: 6px 10px; border-radius: 6px; cursor: pointer;
+      background: #7f1d1d; border: 1px solid #ef4444; color: #fecaca; font-size: 14px; font-weight: bold; padding: 6px 10px; border-radius: 6px; cursor: pointer;
     }
 
     /* アクションボタン */
@@ -283,42 +283,41 @@
 
     /* モーダル */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.88); z-index: 100; padding: 10px; overflow-y: auto; backdrop-filter: blur(4px); }
-    .modal-content { max-width: 480px; margin: 0 auto; background: #15161c; border-radius: 16px; padding: 16px; border: 1px solid var(--gold-border); }
+    .modal-content { max-width: 600px; margin: 0 auto; background: #15161c; border-radius: 16px; padding: 16px; border: 1px solid var(--gold-border); }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #27272a; padding-bottom: 8px; }
     .modal-title { font-family: 'Shippori Mincho', serif; font-size: 16px; font-weight: bold; color: var(--gold-text); }
     .btn-close { background: transparent; border: none; color: #a1a1aa; font-size: 24px; cursor: pointer; padding: 4px; }
 
-    /* 相互変換電卓モーダル */
-    .conv-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
-    .tab-btn { background: #0a0b0e; border: 1px solid #3f3f46; color: #a1a1aa; padding: 8px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; text-align: center; }
-    .tab-btn.active { background: linear-gradient(135deg, #92661d, #d4af37); color: #000; border-color: #fef08a; font-weight: 900; }
-    .conv-display { background: #0a0b0e; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
-    .conv-disp-top { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #a1a1aa; margin-bottom: 2px; }
-    .tax-toggle-group { display: flex; gap: 3px; }
-    .btn-tax-toggle {
-      background: #27272a; border: 1px solid #52525b; color: #a1a1aa; padding: 2px 5px;
-      border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; white-space: nowrap;
+    /* 符牒電卓 */
+    #convModal {
+      width: min(100%, 560px); max-width: 100%; max-height: 100dvh;
+      margin: auto; padding: 0; border: 0; border-radius: 20px;
+      background: #141310; color: #faf5e6; overscroll-behavior: contain;
     }
-    .btn-tax-toggle.active { background: #b8860b; border-color: #fef08a; color: #0c0d10; font-weight: 900; }
-    .conv-disp-val { font-size: 24px; font-weight: bold; color: #f8fafc; text-align: right; min-height: 32px; word-break: break-all; }
-    .conv-disp-subval { font-size: 12px; color: #e5c158; text-align: right; min-height: 16px; margin-top: 2px; }
-    .conv-disp-res { font-family: 'Shippori Mincho', serif; font-size: 30px; font-weight: 900; color: #fef08a; text-align: right; min-height: 40px; border-top: 1px dashed rgba(212, 175, 55, 0.3); margin-top: 6px; padding-top: 4px; }
-    .keypad-grid-3col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-    .key-btn { background: linear-gradient(180deg, #272a34 0%, #181920 100%); border: 1px solid #3f3f46; color: #f8fafc; padding: 12px 0; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; text-align: center; }
-    .key-btn:active { background: #3f3f46; transform: scale(0.96); }
-    .key-btn.prefix { background: linear-gradient(180deg, #5c4314 0%, #3a2807 100%); border-color: #b8860b; color: #fef08a; font-family: 'Shippori Mincho', serif; }
-    .key-btn.sub { font-size: 11px; color: #a1a1aa; font-weight: normal; display: block; margin-top: -2px; }
-    .key-btn.fn { background: #7f1d1d; border-color: #b91c1c; color: #ffffff; }
-    .key-btn.accent { background: linear-gradient(180deg, #92661d, #d4af37); color: #000; font-weight: 900; }
-
+    #convModal::backdrop { background: rgba(8, 7, 5, .85); }
+    #convModal .modal-content { padding: clamp(14px, 4vw, 26px); background: linear-gradient(150deg,#272219,#121212 60%); }
+    #convModal .modal-header { border-color: #695638; }
+    .conv-display { padding: 14px 16px; background: #0e0e0d; border: 1px solid #76613b; border-radius: 12px; }
+    .conv-disp-top { display: flex; flex-direction: column; gap: 8px; font-size: 16px; color: #e4dac7; }
+    .tax-toggle-group { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 5px; }
+    .btn-tax-toggle { min-height: 44px; background: #211f1c; color: #efe5cf; border: 1px solid #6c604b; border-radius: 8px; font-size: 16px; font-weight: 700; }
+    .btn-tax-toggle.active { background: #e7c77c; color: #1f190c; border-color: #ffe9b4; }
+    .conv-disp-val { font-size: clamp(27px,7.5vw,42px); font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; margin-top: 10px; }
+    .conv-disp-subval { font-size: 16px; text-align: right; color: #e7cd94; }
+    .calc-result-label { margin-top: 8px; padding-top: 8px; border-top: 1px solid #534732; color: #dfcdab; font-size: 15px; }
+    .conv-disp-res { font: 800 clamp(34px,10vw,52px)/1.2 'Shippori Mincho',serif; text-align: right; color: #ffdf99; }
+    .keypad-grid-3col { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; margin-top: 12px; }
+    .key-btn { min-height: clamp(48px,8dvh,76px); background: linear-gradient(#37342f,#242321); border: 1px solid #685c47; color: #fffaf0; border-radius: 10px; font-size: clamp(26px,7vw,36px); font-weight: 650; cursor: pointer; }
+    .key-btn:active { background: #59492e; }
+    .key-btn.fn { font-size: 17px; color: #f3d393; }
     /* 設定・マスタ管理 */
-    .setting-title { font-size: 12px; color: #e5c158; font-weight: bold; margin-bottom: 6px; }
+    .setting-title { font-size: 15px; color: #e5c158; font-weight: bold; margin-bottom: 6px; }
     .master-row {
       display: grid; grid-template-columns: 24px 1.2fr 52px 64px 32px; gap: 5px; margin-bottom: 8px; align-items: center;
       background: #111216; border: 1px solid #27272a; padding: 6px; border-radius: 8px;
     }
     .drag-handle { display: flex; align-items: center; justify-content: center; font-size: 16px; color: #71717a; cursor: grab; }
-    .master-row input, .master-row select { width: 100%; background: #0a0b0e; border: 1px solid #3f3f46; color: #f8fafc; padding: 7px 4px; border-radius: 6px; font-size: 12px; }
+    .master-row input, .master-row select { width: 100%; background: #0a0b0e; border: 1px solid #3f3f46; color: #f8fafc; padding: 7px 4px; border-radius: 6px; font-size: 15px; }
     .master-row select.unit { color: #38bdf8; font-weight: bold; }
     .master-row input.rate { text-align: right; color: #fef08a; }
     .btn-del { width: 100%; height: 33px; background: #7f1d1d; border: 1px solid #b91c1c; color: #fff; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; }
@@ -326,6 +325,25 @@
     .btn-save-conn { width: 100%; background: #334155; border: 1px solid #64748b; color: #f8fafc; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; margin-top: 8px; cursor: pointer; }
     .btn-update-app { width: 100%; background: #1e293b; border: 1px solid #0284c7; color: #38bdf8; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; margin-top: 8px; cursor: pointer; }
     .btn-save-master { width: 100%; background: linear-gradient(180deg, #d4af37 0%, #92661d 100%); border: 1px solid #fef08a; color: #0c0d10; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: 900; margin-top: 10px; cursor: pointer; }
+    .header-bar { flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #80683d; }
+    .header-actions button, .venue-btn, .main-tab-btn, .btn-close { min-height: 44px; }
+    .btn-close { min-width: 44px; }
+    .header-actions .highlight, .btn-save-row { background: linear-gradient(115deg,#b18a43,#f1dca0 48%,#c5a058); color: #231b0b; }
+    .main-tab-btn { font-size: 16px; }
+    .lot-card, .estimate-card { background: linear-gradient(150deg,#24221f,#151618 60%); border-color: #514631; }
+    .result-card { border-color: #a38a53; }
+    input, select { min-width: 0; }
+    body input:not([type=checkbox]), body select { font-size: max(16px,1em); }
+    button:focus-visible, input:focus-visible { outline: 2px solid #ffe5a5; outline-offset: 2px; }
+    @media (max-width: 600px) {
+      body { padding: max(12px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left)); }
+      #convModal { width: 100%; border-radius: 0; }
+      #convModal .modal-content { padding-bottom: max(14px,env(safe-area-inset-bottom)); }
+      .lot-row-2col { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .lot-card > div:first-child { flex-wrap: wrap; gap: 6px; }
+      .input-group { min-width: 0; }
+      .grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
   </style>
 </head>
 <body>
@@ -359,7 +377,7 @@
 </div>
 
 <div class="container">
-  <div id="pendingNotice" style="display:none;background:#422006;padding:10px;border:1px solid #f59e0b;border-radius:8px;font-size:12px;">
+  <div id="pendingNotice" style="display:none;background:#422006;padding:10px;border:1px solid #f59e0b;border-radius:8px;font-size:15px;">
     <div id="pendingLabel"></div><button class="btn-header" onclick="recheckPending()">結果を再確認</button> <button class="btn-header" onclick="retryPending()">同じIDで再送</button> <button class="btn-header" onclick="exportPending()">送信内容を保存</button> <button class="btn-header" onclick="resolvePendingManually()">シートで確認</button>
   </div>
   <!-- ヘッダー -->
@@ -372,16 +390,16 @@
       <span class="sync-status-badge" id="syncStatusBadge" onclick="syncMasterFromSheetSilently(true)" title="タップして手動再取得">同期: 確認中...</span>
     </div>
     <div class="header-actions">
-      <button class="btn-header highlight" onclick="openConvModal()">🔢 テンキー</button>
-      <button class="btn-header" onclick="openMasterModal()">⚙️ 設定</button>
+      <button class="btn-header highlight" onclick="openConvModal()">符牒電卓</button>
+      <button class="btn-header" onclick="openMasterModal()">設定</button>
     </div>
   </div>
 
   <!-- メインモード切替タブ -->
   <div class="main-mode-tabs">
-    <button class="main-tab-btn active" id="tabModeCost" onclick="switchAppMode('cost')">🏷️ 確定原価</button>
-    <button class="main-tab-btn" id="tabModeEstCalc" onclick="switchAppMode('estCalc')">📝 下見見積</button>
-    <button class="main-tab-btn" id="tabModeEstList" onclick="switchAppMode('estList')">📋 見積一覧</button>
+    <button class="main-tab-btn active" id="tabModeCost" onclick="switchAppMode('cost')">確定原価</button>
+    <button class="main-tab-btn" id="tabModeEstCalc" onclick="switchAppMode('estCalc')">下見見積</button>
+    <button class="main-tab-btn" id="tabModeEstList" onclick="switchAppMode('estList')">見積一覧</button>
   </div>
 
   <!-- ======================== モード1：確定原価 ======================== -->
@@ -389,7 +407,7 @@
     <div class="lot-card">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <span class="input-label" style="margin-bottom:0;">オークション会場（仕入先）</span>
-        <button class="btn-header" style="padding:4px 8px; font-size:11px; background:#0284c7; border-color:#38bdf8; color:#fff;" onclick="openWonLotsModal()">📂 落札済の山を呼出</button>
+        <button class="btn-header" style="padding:4px 8px; font-size:14px; background:#0284c7; border-color:#38bdf8; color:#fff;" onclick="openWonLotsModal()">落札済みの山を選ぶ</button>
       </div>
 
       <!-- 呼出中の山ステータス表示 -->
@@ -458,13 +476,13 @@
 
       <!-- その他（自由入力）パネル -->
       <div id="costOtherPanel" class="other-custom-panel">
-        <div style="font-size:11px; color:#fef08a; font-weight:bold;">📝 その他の品名・金額（単価）を手入力</div>
+        <div style="font-size:14px; color:#fef08a; font-weight:bold;">📝 その他の品名・金額（単価）を手入力</div>
         <div class="other-input-row">
           <input type="text" id="costOtherName" placeholder="品目名 (例: 変形牙細工)" oninput="calculate()">
           <input type="number" id="costOtherRate" placeholder="単価(千円/kg)" inputmode="decimal" oninput="calculate()">
         </div>
         <div class="unit-switch-group">
-          <span style="font-size:11px; color:#a1a1aa;">入力方式:</span>
+          <span style="font-size:14px; color:#a1a1aa;">入力方式:</span>
           <button type="button" class="unit-switch-btn active" id="costUnitBtnKg" onclick="setCostOtherUnit('kg')">kg単価</button>
           <button type="button" class="unit-switch-btn" id="costUnitBtnPcs" onclick="setCostOtherUnit('pcs')">個単価</button>
           <button type="button" class="unit-switch-btn" id="costUnitBtnFlat" onclick="setCostOtherUnit('flat')">一式(金額直入)</button>
@@ -497,7 +515,7 @@
 
     <!-- アクションボタン -->
     <div class="action-row">
-      <button class="btn-save-row" id="btnSaveCost" onclick="saveToArchive()">スプレッド保管して次へ</button>
+      <button class="btn-save-row" id="btnSaveCost" onclick="saveToArchive()">原価を保存して次へ</button>
       <button class="btn-next-only" onclick="clearAmountOnly()">保存せず次へ</button>
     </div>
   </div>
@@ -528,13 +546,13 @@
 
       <!-- その他（自由入力）パネル（下見用） -->
       <div id="estOtherPanel" class="other-custom-panel">
-        <div style="font-size:11px; color:#fef08a; font-weight:bold;">📝 その他の品名・金額（単価）を手入力</div>
+        <div style="font-size:14px; color:#fef08a; font-weight:bold;">📝 その他の品名・金額（単価）を手入力</div>
         <div class="other-input-row">
           <input type="text" id="estOtherName" placeholder="品目名 (例: 象牙根付)">
           <input type="number" id="estOtherRate" placeholder="単価(千円/kg)" inputmode="decimal">
         </div>
         <div class="unit-switch-group">
-          <span style="font-size:11px; color:#a1a1aa;">入力方式:</span>
+          <span style="font-size:14px; color:#a1a1aa;">入力方式:</span>
           <button type="button" class="unit-switch-btn active" id="estUnitBtnKg" onclick="setEstOtherUnit('kg')">kg単価</button>
           <button type="button" class="unit-switch-btn" id="estUnitBtnPcs" onclick="setEstOtherUnit('pcs')">個単価</button>
           <button type="button" class="unit-switch-btn" id="estUnitBtnFlat" onclick="setEstOtherUnit('flat')">一式(金額直入)</button>
@@ -561,7 +579,7 @@
     <!-- 見積積算リスト & 掛け率計算カード -->
     <div class="estimate-summary-card">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-        <span style="font-size:11px; color:#38bdf8; font-weight:bold;">入札上限 掛け率</span>
+        <span style="font-size:14px; color:#38bdf8; font-weight:bold;">入札上限 掛け率</span>
         <div class="rate-btn-group">
           <button type="button" class="rate-btn" onclick="setEstLimitRate(null, this)">なし</button>
           <button type="button" class="rate-btn" onclick="setEstLimitRate(0.6, this)">60%</button>
@@ -570,17 +588,17 @@
           <button type="button" class="rate-btn active" onclick="setEstLimitRate(0.8, this)">80%</button>
           <button type="button" class="rate-btn" onclick="setEstLimitRate(0.85, this)">85%</button>
           <input type="number" id="customEstRate" class="rate-custom-input" placeholder="直接" inputmode="numeric" oninput="onCustomRateInput(this)">
-          <span style="font-size:11px; color:#a1a1aa;">%</span>
+          <span style="font-size:14px; color:#a1a1aa;">%</span>
         </div>
       </div>
 
       <div class="est-total-row">
-        <span style="font-size:12px; color:#a1a1aa;">見積総額:</span>
+        <span style="font-size:15px; color:#a1a1aa;">見積総額:</span>
         <span class="est-total-val"><span id="estTotalThousand">0.0</span> 千円 <span style="font-size:13px; color:#94a3b8;">(<span id="estTotalYen">0</span>円)</span></span>
       </div>
 
       <div class="est-limit-row">
-        <span style="font-size:12px; color:#a1a1aa;">入札上限目安:</span>
+        <span style="font-size:15px; color:#a1a1aa;">入札上限目安:</span>
         <span class="est-limit-val"><span id="estLimitThousand">0.0</span> 千円 <span style="font-size:13px; color:#94a3b8;">(<span id="estLimitYen">0</span>円)</span></span>
       </div>
 
@@ -605,7 +623,7 @@
   <!-- ======================== モード3：見積一覧（落札結果 & 責任者クローズ） ======================== -->
   <div id="modeEstListView" style="display:none; flex-direction:column; gap:10px;">
     <div style="display:flex; justify-content:space-between; align-items:center; padding:0 2px;">
-      <span style="font-size:12px; color:#a1a1aa;">スプレッドシート上の下見見積り一覧</span>
+      <span style="font-size:15px; color:#a1a1aa;">スプレッドシート上の下見見積り一覧</span>
       <button class="btn-header" onclick="fetchEstimatesList(true)">🔄 再読み込み</button>
     </div>
     <div id="estimatesListContainer">読み込み中...</div>
@@ -627,20 +645,16 @@
   </div>
 </div>
 
-<!-- 相互変換電卓モーダル -->
-<div class="modal" id="convModal">
+<!-- 符牒電卓 -->
+<dialog id="convModal" aria-labelledby="calculatorTitle">
   <div class="modal-content">
     <div class="modal-header">
-      <div class="modal-title">伏見堂 相互変換電卓</div>
-      <button class="btn-close" onclick="closeConvModal()">✕</button>
-    </div>
-    <div class="conv-tabs">
-      <button class="tab-btn active" id="tabPriceToCipher" onclick="switchConvMode('priceToCipher')">価格 ➔ 符牒</button>
-      <button class="tab-btn" id="tabCipherToPrice" onclick="switchConvMode('cipherToPrice')">符牒 ➔ 価格</button>
+      <div class="modal-title" id="calculatorTitle">符牒電卓</div>
+      <button class="btn-close" aria-label="電卓を閉じる" onclick="closeConvModal()">✕</button>
     </div>
     <div class="conv-display">
       <div class="conv-disp-top">
-        <span id="dispLabel">入力した価格（円）</span>
+        <span>入力価格（円）</span>
         <div class="tax-toggle-group" id="taxToggleGroup">
           <button type="button" class="btn-tax-toggle" id="btnTax44" onclick="setExtraPercent(0.044, this)">+4.4%</button>
           <button type="button" class="btn-tax-toggle" id="btnTax5" onclick="setExtraPercent(0.05, this)">+5%</button>
@@ -650,7 +664,8 @@
       </div>
       <div class="conv-disp-val" id="dispInput">0</div>
       <div class="conv-disp-subval" id="dispSubVal"></div>
-      <div class="conv-disp-res" id="dispOutput">----</div>
+      <div class="calc-result-label">符牒</div>
+      <div aria-live="polite" class="conv-disp-res" id="dispOutput">----</div>
     </div>
     <div id="keypadPrice" class="keypad-grid-3col">
       <button class="key-btn" onclick="pressNum('7')">7</button>
@@ -662,34 +677,12 @@
       <button class="key-btn" onclick="pressNum('1')">1</button>
       <button class="key-btn" onclick="pressNum('2')">2</button>
       <button class="key-btn" onclick="pressNum('3')">3</button>
-      <button class="key-btn fn" onclick="pressClear()">C</button>
+      <button class="key-btn fn" aria-label="全消去" onclick="pressClear()">クリア</button>
       <button class="key-btn" onclick="pressNum('0')">0</button>
       <button class="key-btn" onclick="pressNum('00')">00</button>
     </div>
-    <div id="keypadCipher" style="display:none; flex-direction:column; gap:6px;">
-      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px;">
-        <button class="key-btn prefix" onclick="pressCipher('テ')">テ<span class="sub">100万</span></button>
-        <button class="key-btn prefix" onclick="pressCipher('チ')">チ<span class="sub">10万</span></button>
-        <button class="key-btn prefix" onclick="pressCipher('ト')">ト<span class="sub">1万</span></button>
-        <button class="key-btn prefix" onclick="pressCipher('タ')">タ<span class="sub">千</span></button>
-      </div>
-      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;">
-        <button class="key-btn" onclick="pressCipher('ヒ')">ヒ<span class="sub">1</span></button>
-        <button class="key-btn" onclick="pressCipher('コ')">コ<span class="sub">2</span></button>
-        <button class="key-btn" onclick="pressCipher('ト')">ト<span class="sub">3</span></button>
-        <button class="key-btn" onclick="pressCipher('ニ')">ニ<span class="sub">4</span></button>
-        <button class="key-btn" onclick="pressCipher('サ')">サ<span class="sub">5</span></button>
-        <button class="key-btn" onclick="pressCipher('カ')">カ<span class="sub">6</span></button>
-        <button class="key-btn" onclick="pressCipher('エ')">エ<span class="sub">7</span></button>
-        <button class="key-btn" onclick="pressCipher('ル')">ル<span class="sub">8</span></button>
-        <button class="key-btn" onclick="pressCipher('ウ')">ウ<span class="sub">9</span></button>
-        <button class="key-btn fn" onclick="pressClear()">C</button>
-        <button class="key-btn" onclick="pressCipher('チ')">チ<span class="sub">0</span></button>
-        <button class="key-btn accent" onclick="pressCipher('オ')">オ<span class="sub" style="color:#000;">連続</span></button>
-      </div>
-    </div>
   </div>
-</div>
+</dialog>
 
 <!-- マスタ・安全設定モーダル -->
 <div class="modal" id="masterModal">
@@ -699,16 +692,16 @@
       <button class="btn-close" onclick="closeMasterModal()">✕</button>
     </div>
     <div style="background:#0a0b0e; border:1px solid #3f3f46; border-radius:10px; padding:12px; margin-bottom:14px;">
-      <div class="setting-title">📊 スプレッドシート連携（v2026.11.27-r3.1.1）</div>
+      <div class="setting-title">📊 スプレッドシート連携（v2026.11.27-r3.1.2）</div>
       <div style="display:flex; gap:6px; align-items:center;">
-        <input type="text" id="inputGasUrl" placeholder="GAS WebアプリURL" style="flex:1; background:#181920; border:1px solid #52525b; color:#38bdf8; padding:8px; border-radius:6px; font-size:12px;">
+        <input type="text" id="inputGasUrl" placeholder="GAS WebアプリURL" style="flex:1; background:#181920; border:1px solid #52525b; color:#38bdf8; padding:8px; border-radius:6px; font-size:15px;">
         <button class="btn-header" style="background:#0284c7; border-color:#38bdf8; color:#fff;" onclick="connectAndPullMaster()">手動再取得</button>
       </div>
       <div style="margin-top:10px;">
-        <div id="gasRoleLabel" style="font-size:11px;color:#94a3b8;margin-top:4px;">未接続</div>
+        <div id="gasRoleLabel" style="font-size:14px;color:#94a3b8;margin-top:4px;">未接続</div>
       </div>
       <div style="margin-top:10px;">
-        <div class="setting-title" style="font-size:11px;">🔒 起動パスコード変更（数字6桁）</div>
+        <div class="setting-title" style="font-size:14px;">🔒 起動パスコード変更（数字6桁）</div>
         <input type="password" id="inputNewPasscode" maxlength="6" inputmode="numeric" placeholder="変更する場合のみ入力" style="width:100%; background:#181920; border:1px solid #52525b; color:#fef08a; padding:8px; border-radius:6px; font-size:14px; letter-spacing:4px; text-align:center;">
       </div>
       <button class="btn-save-conn" onclick="saveConnectionSettingsOnly()">設定（URL・パスコード）のみ保存</button>
@@ -726,7 +719,7 @@
 
 <script>
   // --- バージョン文字列ベースのPWA自動更新判定 ---
-  const APP_VERSION = "2026.11.27-r3.1.1";
+  const APP_VERSION = "2026.11.27-r3.1.2";
 
   (function checkPwaUpdate() {
     if(localStorage.getItem('fushimidou_pending_r3')) return;
@@ -1692,12 +1685,12 @@
       card.innerHTML = `
         <div class="est-card-head">
           <div>
-            <div class="est-card-title">${escapeHtml(est.lotName)} <span style="font-size:11px; color:#94a3b8;">(${escapeHtml(est.auction)})</span></div>
+            <div class="est-card-title">${escapeHtml(est.lotName)} <span style="font-size:14px; color:#94a3b8;">(${escapeHtml(est.auction)})</span></div>
             <div class="est-card-date">📅 ${escapeHtml(est.date || '日時未記録')}</div>
           </div>
           <span class="status-badge ${badgeClass}">${statusText}</span>
         </div>
-        <div style="display:flex; justify-content:space-between; font-size:12px;">
+        <div style="display:flex; justify-content:space-between; font-size:15px;">
           <span style="color:#a1a1aa;">見積総額:</span>
           <span style="font-weight:bold; color:#38bdf8;">${(est.totalEstYen / 1000).toFixed(1)} 千円</span>
         </div>
@@ -1706,10 +1699,10 @@
           <button class="venue-btn ${est.status === '落札' ? 'active' : ''}" style="width:70px; padding:6px 0;" onclick="updateLotStatus(${safeArg}, '落札')">落札</button>
           <button class="venue-btn ${est.status === '不落' ? 'active' : ''}" style="width:60px; padding:6px 0;" onclick="updateLotStatus(${safeArg}, '不落')">不落</button>
         </div>
-        <div style="font-size:11px; color:#38bdf8; cursor:pointer; margin-top:2px;" onclick="toggleCardDetail(${safeArg})">
+        <div style="font-size:14px; color:#38bdf8; cursor:pointer; margin-top:2px;" onclick="toggleCardDetail(${safeArg})">
           ▼ 内訳明細を見る (${est.items ? est.items.length : 0}品)
         </div>
-        <div id="cardDetails_${safeId}" style="display:none; background:#0a0b0e; padding:6px; border-radius:6px; font-size:11px; margin-top:4px;">
+        <div id="cardDetails_${safeId}" style="display:none; background:#0a0b0e; padding:6px; border-radius:6px; font-size:14px; margin-top:4px;">
           ${detailsHtml || '<div style="color:#71717a;">内訳データなし</div>'}
         </div>
         ${managerControls}
@@ -1764,7 +1757,7 @@
                 <div style="font-weight:bold; color:#fef08a; font-size:15px;">${escapeHtml(lot.lotName)} (${escapeHtml(lot.auction)})</div>
                 <div style="font-size:10px; color:#94a3b8;">📅 ${escapeHtml(lot.date || '')}</div>
               </div>
-              <div style="font-size:12px; color:#cbd5e1; margin-top:4px;">
+              <div style="font-size:15px; color:#cbd5e1; margin-top:4px;">
                 全体見積: ${(lot.totalEstYen / 1000).toFixed(1)}千円 ｜ 落札額: ${(lot.buyPriceYen / 1000).toFixed(1)}千円
               </div>
             `;
@@ -1979,37 +1972,15 @@
     }
   }
 
-  // --- テンキー電卓相互変換 ---
-  let currentConvMode = 'priceToCipher';
+  // 価格から符牒を表示する電卓
   let curInputStr = '';
   let activeExtraRate = 0;
-  function openConvModal() { document.getElementById('convModal').style.display = 'block'; switchConvMode('priceToCipher'); }
-  function closeConvModal() { document.getElementById('convModal').style.display = 'none'; }
-  function switchConvMode(mode) {
-    currentConvMode = mode;
-    curInputStr = '';
-    const tabPrice = document.getElementById('tabPriceToCipher');
-    const tabCipher = document.getElementById('tabCipherToPrice');
-    const keypadPrice = document.getElementById('keypadPrice');
-    const keypadCipher = document.getElementById('keypadCipher');
-    const taxToggleGroup = document.getElementById('taxToggleGroup');
-    if (mode === 'priceToCipher') {
-      tabPrice.classList.add('active'); tabCipher.classList.remove('active');
-      keypadPrice.style.display = 'grid'; keypadCipher.style.display = 'none';
-      taxToggleGroup.style.display = 'flex';
-      document.getElementById('dispLabel').textContent = '入力した価格（円）';
-      document.getElementById('dispInput').textContent = '0';
-      document.getElementById('dispSubVal').textContent = '';
-      document.getElementById('dispOutput').textContent = '----';
-    } else {
-      tabCipher.classList.add('active'); tabPrice.classList.remove('active');
-      keypadPrice.style.display = 'none'; keypadCipher.style.display = 'flex';
-      taxToggleGroup.style.display = 'none';
-      document.getElementById('dispLabel').textContent = '入力した符牒コード';
-      document.getElementById('dispInput').textContent = '未入力';
-      document.getElementById('dispSubVal').textContent = '';
-      document.getElementById('dispOutput').textContent = '---- 円';
-    }
+  function openConvModal() {
+    pressClear();
+    document.getElementById('convModal').showModal();
+  }
+  function closeConvModal() {
+    document.getElementById('convModal').close();
   }
   function setExtraPercent(rate, btn) {
     if (activeExtraRate === rate) { activeExtraRate = 0; btn.classList.remove('active'); }
@@ -2042,16 +2013,9 @@
     if (curInputStr === '' && (digit === '0' || digit === '00')) return;
     curInputStr += digit; updatePriceConvDisplay();
   }
-  function pressCipher(char) {
-    if (curInputStr.length >= 4) return;
-    curInputStr += char;
-    document.getElementById('dispInput').textContent = curInputStr;
-    document.getElementById('dispOutput').textContent = decodeCipher(curInputStr);
-  }
   function pressClear() {
     curInputStr = '';
-    if (currentConvMode === 'priceToCipher') updatePriceConvDisplay();
-    else { document.getElementById('dispInput').textContent = '未入力'; document.getElementById('dispOutput').textContent = '---- 円'; }
+    updatePriceConvDisplay();
   }
 
   function showToast(msg) {
