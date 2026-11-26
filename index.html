@@ -705,6 +705,11 @@
         <button class="btn-header" style="background:#0284c7; border-color:#38bdf8; color:#fff;" onclick="connectAndPullMaster()">手動再取得</button>
       </div>
       <div style="margin-top:10px;">
+        <div class="setting-title">GAS 接続トークン（責任者 / スタッフ）</div>
+        <input type="password" id="inputGasToken" autocomplete="off" placeholder="設定時に発行されたトークン" style="width:100%;background:#181920;border:1px solid #52525b;color:#fef08a;padding:8px;border-radius:6px;font-size:13px;">
+        <div id="gasRoleLabel" style="font-size:11px;color:#94a3b8;margin-top:4px;">接続権限: 未確認</div>
+      </div>
+      <div style="margin-top:10px;">
         <div class="setting-title" style="font-size:11px;">🔒 起動パスコード変更（数字6桁）</div>
         <input type="password" id="inputNewPasscode" maxlength="6" inputmode="numeric" placeholder="変更する場合のみ入力" style="width:100%; background:#181920; border:1px solid #52525b; color:#fef08a; padding:8px; border-radius:6px; font-size:14px; letter-spacing:4px; text-align:center;">
       </div>
@@ -805,6 +810,14 @@
     localStorage.setItem('fushimidou_gas_url', HARDCODED_GAS_URL);
   }
   let gasUrl = storedGasUrl;
+  let gasToken = localStorage.getItem('fushimidou_gas_token') || '';
+  let masterRevision = '';
+  let gasRole = '';
+  function setGasRole(r) {
+    gasRole=r.role||'';
+    if(typeof r.revision==='string')masterRevision=r.revision;
+    document.getElementById('gasRoleLabel').textContent='接続権限: '+(gasRole==='manager'?'責任者':gasRole==='staff'?'スタッフ':'未確認');
+  }
 
   const defaultItems = [
     { name: '象牙バングル大', rate: 250, unit: 'kg' },
@@ -892,6 +905,7 @@
   const normMaster = rows => rows.map(i=>({name:String(i.name).trim(), rate:Number(i.rate), unit:i.unit==='pcs'||i.unit==='個'?'pcs':'kg'}));
   async function verifyWrite(p) {
     const x=p.payload, url=p.url;
+    if(x.operationId && gasToken){const r=await readAction(url,'getOperation',{operationId:x.operationId});if(r.rejected)throw Object.assign(Error(r.message||'登録を拒否しました'),{definitive:true});return r.committed===true && r.action===x.action;}
     if(x.action==='saveCostRecord' || x.action==='deleteCostRecord') {
       const r=await readAction(url,'getLotProgress',{lotId:p.lotId||x.lotId||''});
       if(!Array.isArray(r.records)) throw Error('原価一覧応答が不正');
@@ -910,7 +924,7 @@
   }
   async function waitForWrite(p) {
     for(let i=0;i<3;i++) {
-      try { if(await verifyWrite(p)) return true; } catch(e) { console.warn(e); }
+      try { if(await verifyWrite(p)) return true; } catch(e) { if(e.definitive)throw e; console.warn(e); }
       if(i<2) await new Promise(r=>setTimeout(r,900));
     }
     return false;
@@ -920,17 +934,18 @@
     if(!validGasUrl(gasUrl)) { alert('GAS URLを確認してください'); return false; }
     writeBusy=true;
     try {
+      if(gasToken)payload={...payload,operationId:uniqueId('OP')};
       const p={payload,url:gasUrl,lotId};
       setPending(p);
       const controller=new AbortController();
       const timer=setTimeout(()=>controller.abort(),15000);
-      try { await fetch(p.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload),signal:controller.signal}); }
+      try { await fetch(p.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({...payload,...(gasToken?{token:gasToken}:{})}),signal:controller.signal}); }
       catch(e) { console.warn('送信結果不明',e); }
       finally { clearTimeout(timer); }
       if(await waitForWrite(p)) { setPending(null); return true; }
       alert('保存結果を確認できません。再送せず、上部の「結果を再確認」を押してください。');
       return false;
-    } catch(e) { alert('処理できません: '+e.message); return false; }
+    } catch(e) { if(e.definitive)setPending(null); alert('処理できません: '+e.message); return false; }
     finally { writeBusy=false; }
   }
   function finishRecoveredWrite(p) {
@@ -960,7 +975,7 @@
       setPending(null);
       showToast('登録結果を確認しました');
       finishRecoveredWrite(p);
-    } finally {writeBusy=false;}
+    } catch(e) {if(e.definitive)setPending(null);alert(e.message);} finally {writeBusy=false;}
   }
   function exportPending() {
     if(!pendingWrite) return;
@@ -968,11 +983,11 @@
   }
 
   // --- JSONP ローダー ---
-  function fetchJsonp(url, params = {}) {
+  function fetchJsonp(url, params = {}, token=gasToken) {
     return new Promise((resolve,reject)=>{
       if(!validGasUrl(url)) { reject(Error('GAS URLが不正です')); return; }
       const callbackName='gas_cb_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-      const target=new URL(url); Object.entries({...params,callback:callbackName,t:Date.now()}).forEach(([k,v])=>target.searchParams.set(k,String(v)));
+      const target=new URL(url); Object.entries({...params,...(token?{token}:{}),callback:callbackName,t:Date.now()}).forEach(([k,v])=>target.searchParams.set(k,String(v)));
       const script=document.createElement('script');
       let done=false;
       const finish=(err,data)=>{if(done)return;done=true;clearTimeout(timer);delete window[callbackName];script.remove();err?reject(err):resolve(data);};
@@ -1287,6 +1302,7 @@
       itemName: effItemName,
       unitType: isFlat ? '一式' : (isPcs ? '個' : 'kg'),
       amount: isFlat ? 1 : amountVal,
+      rate: effRate,
       buyPriceYen: Math.round(buyPrice * 1000),
       lotEstimateYen: Math.round(lotEstimate * 1000),
       ratioPercent: (ratio > 0) ? (ratio * 100).toFixed(1) + '%' : '0.0%',
@@ -1396,6 +1412,7 @@
   }
 
   async function deleteProgressRecord(recordId,btnEl) {
+    if(gasToken&&gasRole!=='manager'){alert('責任者権限が必要です');return;}
     if(!activeLoadedLot||!recordId||!confirm('この登録を取り消しますか？'))return;
     if(btnEl)btnEl.disabled=true;
     try {if(await confirmedWrite({action:'deleteCostRecord',recordId},activeLoadedLot.id)){showToast('登録を取り消しました');refreshLotProgress();}}
@@ -1411,7 +1428,7 @@
       const rem=Number(lot.buyPriceYen)-r.records.reduce((a,i)=>a+Number(i.actualYen),0);
       if(!Number.isFinite(rem)){alert('原価合計を確認できません');return;}
       if(!confirm('原価残額: '+rem.toLocaleString()+'円。'+(rem!==0?'差額があります。':'')+'完了にしますか？'))return;
-      if(await confirmedWrite({action:'updateEstimateStatus',id:lot.id,status:'完了'})){
+      if(await confirmedWrite({action:'updateEstimateStatus',id:lot.id,status:'完了',expectedRemaining:rem})){
         if(activeLoadedLot?.id===lot.id){activeLoadedLot=null;currentLotRecords=[];for(const id of ['loadedLotStatusBar','costRefDetailsBox','lotProgressBox'])$(id).style.display='none';for(const id of ['lotName','buyPrice','lotEstimate','amountInput','costOtherRate','costOtherName'])$(id).value='';calculate();}
         showToast('山を完了に更新しました');
       }
@@ -1675,19 +1692,21 @@
   }
 
   async function updateLotStatus(id,newStatus) {
+    if(gasToken&&gasRole!=='manager'){alert('責任者権限が必要です');return;}
     const target=loadedEstimates.find(e=>e.id===id);
     if(!target)return;
     const allowed={'下見中':['落札','不落'],'落札':['落札','不落'],'不落':['落札'],'完了':['落札']};
     if(!(allowed[target.status]||allowed['下見中']).includes(newStatus))return;
     const buyPriceYen=Math.round(Number($('cardBuyPrice_'+id)?.value)*1000);
     if(newStatus==='落札'&&!positive(buyPriceYen)){alert('落札額を入力してください');return;}
-    if(await confirmedWrite({action:'updateEstimateStatus',id,status:newStatus,...(newStatus==='落札'?{buyPriceYen}:{})})){showToast('ステータスを更新しました');fetchEstimatesList();}
+    if(await confirmedWrite({action:'updateEstimateStatus',id,status:newStatus,expectedStatus:target.status,...(newStatus==='落札'?{buyPriceYen}:{})})){showToast('ステータスを更新しました');fetchEstimatesList();}
   }
 
   async function archiveEstimateLot(id) {
+    if(gasToken&&gasRole!=='manager'){alert('責任者権限が必要です');return;}
     const target=loadedEstimates.find(e=>e.id===id);
     if(!target||!['完了','不落'].includes(target.status)||!confirm('一覧からクローズしますか？'))return;
-    if(await confirmedWrite({action:'updateEstimateStatus',id,status:'削除'})){showToast('山をクローズしました');fetchEstimatesList();}
+    if(await confirmedWrite({action:'updateEstimateStatus',id,status:'削除',expectedStatus:target.status})){showToast('山をクローズしました');fetchEstimatesList();}
   }
 
   // --- 確定原価側への落札山呼出 ---
@@ -1814,12 +1833,14 @@
     if(writeBusy||pendingWrite){alert('送信結果を確認してください');return;}
     if (!validGasUrl(url)) { alert('GAS URLを確認してください'); return; }
 
-    fetchJsonp(url, { action: 'getMaster' })
+    const token=$('inputGasToken').value.trim();
+    fetchJsonp(url, { action: 'getMaster' },token)
       .then(res => {
         if (res.status === 'success' && res.items) {
-          gasUrl = url;
+          gasUrl = url;gasToken=token;localStorage.setItem('fushimidou_gas_token',gasToken);setGasRole(res);
           localStorage.setItem('fushimidou_gas_url', gasUrl);
-          items = res.items.map(i => ({ name: i.name, rate: Number(i.rate), unit: i.unit === 'pcs' ? 'pcs' : 'kg' }));
+          if(res.initialized!==false)items = normMaster(res.items);
+          setGasRole(res);
           localStorage.setItem('app_master_items', JSON.stringify(items));
           localStorage.setItem('fushimidou_last_sync', Date.now());
           renderGrid();
@@ -1829,6 +1850,7 @@
           updateSyncDisplay();
           showToast('マスタを安全に同期しました');
         }
+        else alert(res.message||'同期失敗');
       }).catch(err => alert('同期エラー: ' + err.message));
   }
 
@@ -1837,10 +1859,11 @@
     const badge = document.getElementById('syncStatusBadge');
     if (isManualClick && badge) badge.textContent = '同期中...';
 
-    fetchJsonp(gasUrl, { action: 'getMaster' })
+    return fetchJsonp(gasUrl, { action: 'getMaster' })
       .then(res => {
         if (res.status === 'success' && res.items) {
-          items = res.items.map(i => ({ name: i.name, rate: Number(i.rate), unit: i.unit === 'pcs' ? 'pcs' : 'kg' }));
+          if(res.initialized!==false)items = normMaster(res.items);
+          setGasRole(res);
           localStorage.setItem('app_master_items', JSON.stringify(items));
           localStorage.setItem('fushimidou_last_sync', Date.now());
           renderGrid();
@@ -1851,13 +1874,15 @@
             setTimeout(updateSyncDisplay, 1500);
           }
         }
-      }).catch(() => updateSyncDisplay());
+        else {if(badge)badge.textContent='同期失敗';if(isManualClick)alert(res.message||'同期失敗');}
+      }).catch(e => {if(badge)badge.textContent='同期失敗';if(isManualClick)alert(e.message);});
   }
 
   let sortableInstance = null;
   function openMasterModal() {
     refreshMasterModalList();
     document.getElementById('inputGasUrl').value = gasUrl;
+    $('inputGasToken').value=gasToken;
     document.getElementById('masterModal').style.display = 'block';
     const list = document.getElementById('masterList');
     if (sortableInstance) sortableInstance.destroy();
@@ -1901,6 +1926,7 @@
     const pin=$('inputNewPasscode').value.trim();
     if(!validGasUrl(url)|| (pin&&!/^\d{6}$/.test(pin))){alert('URLまたは6桁のPINを確認してください');return;}
     gasUrl=url;
+    gasToken=$('inputGasToken').value.trim();localStorage.setItem('fushimidou_gas_token',gasToken);gasRole='';masterRevision='';
     localStorage.setItem('fushimidou_gas_url', gasUrl);
     const newPass = document.getElementById('inputNewPasscode').value.trim();
     if (newPass && /^\d{6}$/.test(newPass)) {
@@ -1914,7 +1940,9 @@
     const newItems=[...document.querySelectorAll('.master-row')].map(r=>({name:r.querySelector('.name').value.trim(),rate:Number(r.querySelector('.rate').value),unit:r.querySelector('.unit').value}));
     if(!newItems.length||newItems.some(i=>!i.name||!positive(i.rate))||new Set(newItems.map(i=>i.name)).size!==newItems.length){alert('品目名の重複・空欄・単価を確認してください');return;}
     if(!confirm('商品マスタを上書き更新しますか？'))return;
-    if(await confirmedWrite({action:'updateMaster',items:newItems})){
+    if(gasToken && gasRole!=='manager'){alert('責任者トークンで接続してください');return;}
+    if(await confirmedWrite({action:'updateMaster',items:newItems,expectedRevision:masterRevision})){
+      await syncMasterFromSheetSilently(true);
       items=newItems;localStorage.setItem('app_master_items',JSON.stringify(items));localStorage.setItem('fushimidou_last_sync',Date.now());renderGrid();renderEstGrid();calculate();updateSyncDisplay();closeMasterModal();showToast('マスタを更新しました');
     }
   }
