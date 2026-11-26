@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="伏見堂 原価符牒">
-  <meta name="app-version" content="2026.11.27-r3.1.3">
+  <meta name="app-version" content="2026.11.27-r3.1.4">
 
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -692,7 +692,7 @@
       <button class="btn-close" onclick="closeMasterModal()">✕</button>
     </div>
     <div style="background:#0a0b0e; border:1px solid #3f3f46; border-radius:10px; padding:12px; margin-bottom:14px;">
-      <div class="setting-title">📊 スプレッドシート連携（v2026.11.27-r3.1.3）</div>
+      <div class="setting-title">📊 スプレッドシート連携（v2026.11.27-r3.1.4）</div>
       <div style="display:flex; gap:6px; align-items:center;">
         <input type="text" id="inputGasUrl" placeholder="GAS WebアプリURL" style="flex:1; background:#181920; border:1px solid #52525b; color:#38bdf8; padding:8px; border-radius:6px; font-size:15px;">
         <button class="btn-header" style="background:#0284c7; border-color:#38bdf8; color:#fff;" onclick="connectAndPullMaster()">手動再取得</button>
@@ -719,7 +719,7 @@
 
 <script>
   // --- バージョン文字列ベースのPWA自動更新判定 ---
-  const APP_VERSION = "2026.11.27-r3.1.3";
+  const APP_VERSION = "2026.11.27-r3.1.4";
 
   (function checkPwaUpdate() {
     if(localStorage.getItem('fushimidou_pending_r3')) return;
@@ -1183,103 +1183,40 @@
     document.getElementById('estUnitTextBadge').textContent = isPcs ? '個' : 'g';
   }
 
-  // --- 符牒生成 / 復号ロジック ---
-  const map = { '1':'ヒ', '2':'コ', '3':'ト', '4':'ニ', '5':'サ', '6':'カ', '7':'エ', '8':'ル', '9':'ウ', '0':'チ' };
-  const revMap = { 'ヒ':'1', 'コ':'2', 'ト':'3', 'ニ':'4', 'サ':'5', 'カ':'6', 'エ':'7', 'ル':'8', 'ウ':'9', 'チ':'0' };
-  const prefixDigitLen = { 'テ': 7, 'チ': 6, 'ト': 5, 'タ': 4 };
-
-  function buildRawCipher(val) {
-    const num = Math.floor(val);
-    let prefix = "";
-    if (num >= 1000000) prefix = "テ";
-    else if (num >= 100000) prefix = "チ";
-    else if (num >= 10000) prefix = "ト";
-    else if (num >= 1000) prefix = "タ";
-
-    const fullDigits = String(num);
-    let res = [map[fullDigits[0]]];
-    for (let i = 1; i < fullDigits.length; i++) {
-      if (/^0+$/.test(fullDigits.slice(i))) { res.push("チ"); break; }
-      if (fullDigits[i] === fullDigits[i - 1]) {
-        if (res[res.length - 1] !== "オ") res.push("オ");
+  // 上位3桁で表す符牒と、その符牒で扱える金額の上限。
+  const cipherDigits = 'チヒコトニサカエルウ';
+  const cipherBands = [];
+  for (const [places, prefix] of [[4, 'タ'], [5, 'ト'], [6, 'チ'], [7, 'テ']]) {
+    const unit = 10 ** (places - 3);
+    for (let leading = 100; leading <= 999; leading++) {
+      const [a, b, c] = String(leading);
+      let body = cipherDigits[a];
+      let ceiling = leading * unit;
+      if (a === b && b === c) {
+        body += 'オ';
+        ceiling = Number(a.repeat(places));
+      } else if (b === '0' && c === '0') {
+        body += 'チ';
       } else {
-        res.push(map[fullDigits[i]]);
+        body += a === b ? 'オ' : cipherDigits[b];
+        if (c !== '0') body += c === b ? 'オ' : cipherDigits[c];
+        else if (a === b) body += 'チ';
       }
-      if (/^0+$/.test(fullDigits.slice(i + 1))) { res.push("チ"); break; }
+      cipherBands.push({ceiling, code: prefix + body});
     }
-    return prefix + res.join("");
   }
 
-  function getLegacyCipher(priceYen) {
-    if (!priceYen || priceYen < 1000) return "----";
-    let num = Math.floor(priceYen);
-    let raw = buildRawCipher(num);
-    if (raw.length > 4) {
-      let s = String(num);
-      const overflowDigits = s.length - 3;
-      if (overflowDigits > 0) {
-        const unit = Math.pow(10, overflowDigits);
-        num = Math.ceil(num / unit) * unit;
-      }
-      raw = buildRawCipher(num);
-    }
-    let code = raw.slice(0, 4);
-    // 「オ」で終えると全桁同じ数字を表すため、反復の後の末尾ゼロを明示する。
-    if (code.length === 4 && code.endsWith("チ") && !code.endsWith("オチ")) code = code.slice(0, 3);
-    return code;
-  }
-
-  // Preserve legacy decoding; new codes select the smallest representable amount >= input.
-  let cipherCandidates;
   function getCipher(priceYen) {
-    const n=Math.ceil(Number(priceYen));
-    if(!Number.isSafeInteger(n) || n<1000 || n>9999999) return '----';
-    if(!cipherCandidates) {
-      const codes=new Map(), alphabet=Object.keys(revMap).concat('オ');
-      for(const prefix of Object.keys(prefixDigitLen)) {
-        const walk=(body,depth)=>{
-          if(body && body[0]!=='オ') {
-            const code=prefix+body, value=Number(decodeCipher(code).replace(/[^0-9]/g,''));
-            if(value>=10**(prefixDigitLen[prefix]-1) && value<10**prefixDigitLen[prefix]) {
-              const old=codes.get(value);
-              if(!old || code.length<old.length) codes.set(value,code);
-            }
-          }
-          if(depth<3) for(const c of alphabet) walk(body+c,depth+1);
-        }; walk('',0);
-      }
-      cipherCandidates=[...codes].sort((a,b)=>a[0]-b[0]);
+    const yen = Math.ceil(Number(priceYen));
+    if (!Number.isSafeInteger(yen) || yen < 1000 || yen > 9999999) return '----';
+    let low = 0;
+    let high = cipherBands.length - 1;
+    while (low < high) {
+      const middle = Math.floor((low + high) / 2);
+      if (cipherBands[middle].ceiling < yen) low = middle + 1;
+      else high = middle;
     }
-    let lo=0,hi=cipherCandidates.length;
-    while(lo<hi){const m=(lo+hi)>>1;if(cipherCandidates[m][0]<n)lo=m+1;else hi=m;}
-    const hit=cipherCandidates[lo]; if(!hit)return '----';
-    const legacy=getLegacyCipher(n);
-    return Number(decodeCipher(legacy).replace(/[^0-9]/g,''))===hit[0] ? legacy : hit[1];
-  }
-
-  function decodeCipher(cipherStr) {
-    const s = cipherStr.trim();
-    if (!s) return "----";
-    const first = s[0];
-    if (!prefixDigitLen[first]) return "頭文字:テ/チ/ト/タ";
-    const targetLen = prefixDigitLen[first];
-    const body = s.slice(1);
-    if (body.length === 2 && body[1] === 'オ' && revMap[body[0]]) {
-      return Number(revMap[body[0]].repeat(targetLen)).toLocaleString() + " 円";
-    }
-    let digits = [];
-    for (let i = 0; i < body.length; i++) {
-      const ch = body[i];
-      if (ch === 'オ') {
-        if (digits.length > 0) digits.push(digits[digits.length - 1]);
-      } else if (revMap[ch]) {
-        digits.push(revMap[ch]);
-      }
-    }
-    let numStr = digits.join('');
-    if (!numStr) return "コードを入力";
-    numStr = numStr.padEnd(targetLen, '0').slice(0, targetLen);
-    return Number(numStr).toLocaleString() + " 円";
+    return cipherBands[low].code;
   }
 
   // --- 確定原価 計算 & 進捗残額リアルタイム連動 ---
